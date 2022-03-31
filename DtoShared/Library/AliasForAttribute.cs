@@ -1,10 +1,10 @@
 ﻿namespace Net.Leksi.Dto;
 
 [AttributeUsage(AttributeTargets.Property)]
-public class AliasAttribute : Attribute
+public class AliasForAttribute : Attribute
 {
     private string _propertyName;
-    public AliasAttribute(string propertyName)
+    public AliasForAttribute(string propertyName)
     {
         _propertyName = propertyName;
     }

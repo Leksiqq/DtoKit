@@ -1,63 +1,81 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text;
 
 namespace Net.Leksi.Dto;
 
-public class DtoBuilder<T> where T : class
-{
+public class DtoBuilder { 
+    private class KeyComparer : IEqualityComparer<object>
+    {
+        public new bool Equals(object? x, object? y)
+        {
+            if (x == y)
+            {
+                return true;
+            }
+            if (x == null || y == null)
+            {
+                return false;
+            }
+            return ((object[])x).Length == ((object[])y).Length && ((object[])x).Zip((object[])y).All(v => v.First.Equals(v.Second));
+        }
+
+        public int GetHashCode([DisallowNull] object obj)
+        {
+            int result = ((object[])obj).Select(v => v.GetHashCode()).Aggregate(0, (v, res) => unchecked (v + res));
+            return result;
+        }
+    }
+
     public event ValueRequestEventHandler ValueRequest;
 
     private const string Slash = "/";
     private const string Dot = ".";
 
-    private PropertyNode _root = new();
-    private DtoServiceProvider _serviceProvider;
-    private List<Type> _antiLoop = new();
+    private static readonly KeyComparer _keyComparer = new();
+
+    private TypesForest _typesForest;
     private List<string> _paths = new();
-    private int _propertyNodeIdGen = 0;
-    private Dictionary<int, string> _pathsCache = new();
+    private Dictionary<Type, Dictionary<object[], object>> _objectsCache = new();
+    private List<string> _ignoredPaths = new();
 
-    public T? Target { get; set; } = null;
+    public object? Target { get; set; } = null;
 
-    public bool IsAutoCreateDefault { get; set; } = false;
+    public bool ShouldAutoCreateNotNullable { get; set; } = false;
 
-    public DtoBuilder(IServiceProvider serviceProvider)
+    public DtoBuilder(TypesForest typesForest)
     {
-        if(serviceProvider is null)
-        {
-            throw new ArgumentNullException(nameof(serviceProvider));
-        }
-        if(serviceProvider is DtoServiceProvider dsp)
-        {
-            _serviceProvider = dsp;
-        }
-        else
-        {
-            _serviceProvider = serviceProvider.GetRequiredService<DtoServiceProvider>();
-        }
-        if(!_serviceProvider.IsRegistered(typeof(T)))
+        _typesForest = typesForest ?? throw new ArgumentNullException(nameof(typesForest));
+
+    }
+
+    public T Build<T>() where T : class
+    {
+        if (!_typesForest.ServiceProvider.IsRegistered(typeof(T)))
         {
             throw new ArgumentException(nameof(T));
         }
-        _root.ChildNodes = new List<PropertyNode>();
+        _typesForest.PlantTypeTree(typeof(T));
+        _ignoredPaths.Clear();
+        T result = (T)Build(new PropertyNode { TypeNode = _typesForest.GetTypeNode(typeof(T)) }, Target);
+        if(_ignoredPaths.Count > 0)
+        {
+            throw new InvalidOperationException($"path(s) ignored:\n{string.Join("\n", _ignoredPaths)}");
 
-        _antiLoop.Clear();
-        _antiLoop.Add(typeof(T));
-        FillChildren(_root.ChildNodes, typeof(T));
-
+        }
+        return result;
     }
 
-    public T Build()
+    public void ClearObjectCache()
     {
-        _paths.Clear();
-        return (T)Build(_root, Target);
+        _objectsCache.Clear();
     }
 
-    public string GenerateHandlerStub()
+    public string GenerateHandlerSkeleton<T>(bool WithIsAutoCreateDefault) where T : class
     {
-        bool IsAutoCreateDefaultSave = IsAutoCreateDefault;
-        IsAutoCreateDefault = true;
+        bool IsAutoCreateDefaultSave = ShouldAutoCreateNotNullable;
+        ShouldAutoCreateNotNullable = WithIsAutoCreateDefault;
         StringBuilder sb = new();
         sb.Append(@"
 (ValueRequestEventArgs args) => {
@@ -67,15 +85,23 @@ public class DtoBuilder<T> where T : class
             sb.Append(@$"
         case ""{args.Path}"":
             //args.CreateDefault();
+            //args.Value = ...;
             //args.Status = ValueRequestStatus.Node;
             //args.Status = ValueRequestStatus.Terminal;
             break;");
-            args.Status = ValueRequestStatus.Node;
+            if(args.Target is { })
+            {
+                args.Status = ValueRequestStatus.Node;
+            }
+            else
+            {
+                args.CreateDefault();
+            }
         };
         ValueRequest += eh;
-        Build();
+        Build<T>();
         ValueRequest -= eh;
-        IsAutoCreateDefault = IsAutoCreateDefaultSave;
+        ShouldAutoCreateNotNullable = IsAutoCreateDefaultSave;
         sb.AppendLine(@"
     }
 }");
@@ -86,128 +112,100 @@ public class DtoBuilder<T> where T : class
     {
         ValueRequestEventArgs eventArgs = new();
         eventArgs.Target = target;
-        Type targetType = propertyNode.PropertyInfo is { } pi ? pi.PropertyType : typeof(T);
-        if(eventArgs.Target is null && IsAutoCreateDefault)
+        if (
+            eventArgs.Target is null 
+            && ShouldAutoCreateNotNullable 
+            && (
+                (
+                    propertyNode.PropertyInfo is { } pi 
+                    && Nullable.GetUnderlyingType(pi.PropertyType) is null
+                )
+                || propertyNode.PropertyInfo is null
+            )
+        )
         {
-            eventArgs.Target = _serviceProvider.GetService(targetType);
+            eventArgs.Target = _typesForest.ServiceProvider.GetService(propertyNode.TypeNode.Type);
         }
         if (eventArgs.Target is null)
         {
             eventArgs.SetPropertyInfo(propertyNode.PropertyInfo);
-            string path = _pathsCache.GetValueOrDefault(propertyNode.Id);
-            if (path is null)
-            {
-                path = $"{Slash}{string.Join(Slash, _paths)}";
-                _pathsCache[propertyNode.Id] = path;
-            }
-            eventArgs.SetPath(path);
+            eventArgs.SetPath($"{Slash}{string.Join(Slash, _paths)}");
             ValueRequest!.Invoke(eventArgs);
-            if (eventArgs.Status is ValueRequestStatus.Pending || eventArgs.Target is null)
+            if (eventArgs.Status is ValueRequestStatus.Pending)
             {
-                throw new InvalidOperationException(eventArgs.Path);
+                _ignoredPaths.Add(eventArgs.Path);
+            }
+            if((eventArgs.Target is null && _ignoredPaths.Count > 0) || (eventArgs.Target == ValueRequestEventArgs.NewValue))
+            {
+                eventArgs.Target = _typesForest.ServiceProvider.GetService(propertyNode.TypeNode.Type);
             }
             if (eventArgs.Status is ValueRequestStatus.Terminal)
             {
                 return eventArgs.Target;
             }
-            if(eventArgs.Target == ValueRequestEventArgs.NewValue)
-            {
-                eventArgs.Target = _serviceProvider.GetService(targetType);
-            }
+        }
+        if(eventArgs.Target is null)
+        {
+            return null;
         }
         target = eventArgs.Target;
-        if(propertyNode.ChildNodes is { } children)
+        if(propertyNode.TypeNode.ChildNodes is { } children)
         {
-            Type type = target.GetType();
-            if (!propertyNode.IsConfigured)
+            _typesForest.ConfirmTypeNode(propertyNode.TypeNode, target.GetType());
+            int childPosition = 0;
+            object[]? key = null;
+            foreach (PropertyNode child in children)
             {
-                foreach (PropertyInfo propertyInfo in type.GetProperties(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance))
+                _paths.Add(child.PropertyName);
+                if (child.TypeNode.ChildNodes is null)
                 {
-                    if (propertyInfo.GetCustomAttribute<KeyAttribute>() is { })
-                    {
-                        if (propertyInfo.CanWrite)
-                        {
-                            propertyNode.ChildNodes.Insert(0, new PropertyNode { PropertyInfo = propertyInfo, Id = ++_propertyNodeIdGen });
-                        }
-                    }
-                    else if (propertyInfo.Name.Contains(Dot))
-                    {
-                        if (propertyInfo.Name.StartsWith(targetType.FullName) 
-                            && propertyInfo.Name.LastIndexOf(Dot) == targetType.FullName.Length 
-                            && propertyInfo.GetCustomAttribute<AliasAttribute>() is { } alias)
-                        {
-                            PropertyInfo aliasProperty = type.GetProperty(alias.PropertyName);
-                            if (aliasProperty.CanWrite)
-                            {
-                                if(children.Where(ch => ch.PropertyInfo.Name.Equals(propertyInfo.Name.Substring(propertyInfo.Name.LastIndexOf(Dot) + 1)))
-                                    .FirstOrDefault() is PropertyNode node)
-                                {
-                                    node.AliasPropertyInfo = aliasProperty;
-                                }
-                            }
-                        }
-                    }
-                    else
-                    {
-                        if(children.Where(ch => ch.PropertyInfo.Name.Equals(propertyInfo.Name))
-                            .FirstOrDefault() is PropertyNode node)
-                        {
-                            node.AliasPropertyInfo = propertyInfo;
-                        }
-                    }
-                }
-                propertyNode.ChildNodes.RemoveAll(ch => (ch.AliasPropertyInfo is null && !ch.PropertyInfo.CanWrite) 
-                    || (ch.AliasPropertyInfo is { } alias && !alias.CanWrite));
-                propertyNode.IsConfigured = true;
-            }
-            foreach(PropertyNode child in children)
-            {
-                _paths.Add(child.PropertyInfo.Name);
-                if (child.ChildNodes is null)
-                {
-                    string path = _pathsCache.GetValueOrDefault(child.Id);
-                    if (path is null)
-                    {
-                        path = $"{Slash}{string.Join(Slash, _paths)}";
-                        _pathsCache[child.Id] = path;
-                    }
-                    eventArgs.SetPath(path);
+                    eventArgs.SetPath($"{Slash}{string.Join(Slash, _paths)}");
                     eventArgs.ResetStatus();
+                    eventArgs.SetPropertyInfo(child.PropertyInfo);
                     ValueRequest!.Invoke(eventArgs);
                     if (eventArgs.Status is ValueRequestStatus.Pending)
                     {
-                        throw new InvalidOperationException(eventArgs.Path);
+                        _ignoredPaths.Add(eventArgs.Path);
                     }
                 }
                 else
                 {
-                    object result = Build(child, (child.AliasPropertyInfo ?? child.PropertyInfo).GetValue(target));
-                    (child.AliasPropertyInfo ?? child.PropertyInfo).SetValue(target, result);
+                    object result = Build(child, child.PropertyInfo.GetValue(target));
+                    child.PropertyInfo.SetValue(target, result);
                 }
                 _paths.RemoveAt(_paths.Count - 1);
+                childPosition++;
+                if(childPosition == propertyNode.TypeNode.KeysCount)
+                {
+                    key = children.Take(propertyNode.TypeNode.KeysCount).Select(v => v.PropertyInfo.GetValue(target)).ToArray();
+                    if(key.Any(v => v is null))
+                    {
+                        key = null;
+                    } 
+                    else
+                    {
+                        if (_objectsCache.ContainsKey(propertyNode.TypeNode.Type))
+                        {
+                            if (_objectsCache[propertyNode.TypeNode.Type].TryGetValue(key, out object cachedObject))
+                            {
+                                target = cachedObject;
+                                break;
+                            }
+                        }
+                    }
+
+                }
+            }
+            if(key is { })
+            {
+                if (!_objectsCache.ContainsKey(propertyNode.TypeNode.Type))
+                {
+                    _objectsCache.Add(propertyNode.TypeNode.Type, new Dictionary<object[], object>(_keyComparer));
+                }
+                _objectsCache[propertyNode.TypeNode.Type][key] = target;
             }
         }
         return target;
 
-    }
-
-    private void FillChildren(List<PropertyNode> childNodes, Type type)
-    {
-        foreach (PropertyInfo propertyInfo in type.GetProperties())
-        {
-            if (_antiLoop.Contains(propertyInfo.PropertyType))
-            {
-                throw new Exception($"Loop detected: {string.Join(Slash, _antiLoop.Select(t => t.Name))}/{propertyInfo.PropertyType.Name}");
-            }
-            _antiLoop.Add(propertyInfo.PropertyType);
-            PropertyNode node = new PropertyNode { PropertyInfo = propertyInfo, Id = ++_propertyNodeIdGen };
-            childNodes.Add(node);
-            if (_serviceProvider.IsRegistered(propertyInfo.PropertyType))
-            {
-                node.ChildNodes = new List<PropertyNode>();
-                FillChildren(node.ChildNodes, propertyInfo.PropertyType);
-            }
-            _antiLoop.RemoveAt(_antiLoop.Count - 1);
-        }
     }
 }

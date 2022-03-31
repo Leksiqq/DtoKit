@@ -7,10 +7,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using TestProject1.Dto1;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 
 namespace TestProject1;
 
-public class DtoBuilderUnitTest
+public class DtoJsonConverterUnitTest
 {
     [OneTimeSetUp]
     public void OneTimeSetup()
@@ -38,7 +39,6 @@ public class DtoBuilderUnitTest
         dsp.AddTransient<IRoute, Route>();
         dsp.AddTransient<ILine, Line>();
         dsp.AddTransient<IVesselShort, Vessel>();
-        dsp.Commit();
 
         TypesForest tf = new(dsp);
 
@@ -48,25 +48,16 @@ public class DtoBuilderUnitTest
 
         dtoBuilder.ValueRequest += DtoBuilder_ValueRequest;
 
-        dtoBuilder.Build<IShipCall>();
-    }
+        IShipCall shipCall = dtoBuilder.Build<IShipCall>();
 
-    [Test]
-    public void Test2()
-    {
-        DtoServiceProvider dsp = new(null);
-        dsp.AddTransient<IShipCall, ShipCall>();
-        dsp.AddTransient<ILocation, Location>();
-        dsp.AddTransient<IRoute, Route>();
-        dsp.AddTransient<ILine, Line>();
-        dsp.AddTransient<IVesselShort, Vessel>();
-        dsp.Commit();
+        DtoJsonConverterFactory converter = new(tf);
 
-        TypesForest tf = new(dsp);
+        JsonSerializerOptions options = new();
+        options.Converters.Add(converter);
 
-        DtoBuilder dtoBuilder = new(tf);
+        string json = JsonSerializer.Serialize(shipCall, options);
 
-        Trace.WriteLine(dtoBuilder.GenerateHandlerSkeleton<IShipCall>(true));
+        Console.WriteLine(json);
     }
 
     private void DtoBuilder_ValueRequest(ValueRequestEventArgs args)
@@ -83,7 +74,7 @@ public class DtoBuilderUnitTest
         dsp.AddTransient<ILocation, Location>();
         dsp.AddTransient<IRoute, Route>();
         dsp.AddTransient<ILine, Line>();
-        dsp.AddTransient<IVesselShort, Vessel>();
+        dsp.AddTransient<IVessel, Vessel>();
         dsp.Commit();
 
         TypesForest tf = new(dsp);
@@ -178,7 +169,7 @@ public class DtoBuilderUnitTest
                     break;
                 case "/Location/Name":
                     //args.CreateDefault();
-                    //args.Value = ...;
+                    args.Value = $"Port{i}";
                     args.Status = ValueRequestStatus.Node;
                     //args.Status = ValueRequestStatus.Terminal;
                     break;
@@ -212,6 +203,52 @@ public class DtoBuilderUnitTest
                     args.Status = ValueRequestStatus.Node;
                     //args.Status = ValueRequestStatus.Terminal;
                     break;
+                case "/Route/Vessel/Port/ID_LOCATION":
+                    args.Value = (i + 10).ToString();
+                    args.Status = ValueRequestStatus.Node;
+                    break;
+                case "/Route/Vessel/Port/Type":
+                    args.Value = LocationType.Port;
+                    args.Status = ValueRequestStatus.Node;
+                    break;
+                case "/Route/Vessel/Port/Unlocode":
+                    args.Status = ValueRequestStatus.Node;
+                    break;
+                case "/Route/Vessel/Port/Name":
+                    args.Value = $"Port{i + 10}";
+                    args.Status = ValueRequestStatus.Node;
+                    break;
+                case "/Route/Vessel/Length":
+                    args.Status = ValueRequestStatus.Node;
+                    break;
+                case "/Route/Vessel/Width":
+                    args.Status = ValueRequestStatus.Node;
+                    break;
+                case "/Route/Vessel/Height":
+                    args.Status = ValueRequestStatus.Node;
+                    break;
+                case "/Route/Vessel/Brutto":
+                    args.Status = ValueRequestStatus.Node;
+                    break;
+                case "/Route/Vessel/Netto":
+                    args.Status = ValueRequestStatus.Node;
+                    break;
+                case "/Route/Vessel/LineMeters":
+                    args.Status = ValueRequestStatus.Node;
+                    break;
+                case "/Route/Vessel/Description":
+                    args.Status = ValueRequestStatus.Node;
+                    break;
+                case "/Route/Vessel/RiffCount":
+                    args.Status = ValueRequestStatus.Node;
+                    break;
+                case "/Route/Vessel/IsOcean":
+                    args.Status = ValueRequestStatus.Node;
+                    break;
+                case "/Route/Vessel/CallSign":
+                    args.Status = ValueRequestStatus.Node;
+                    break;
+
             }
         };
 
@@ -221,21 +258,20 @@ public class DtoBuilderUnitTest
         {
             shipCalls.Add(dtoBuilder.Build<IShipCall>());
         }
-    }
 
-    [Test]
-    public void Test4()
-    {
-        DtoServiceProvider dsp = new(null);
-        dsp.AddTransient<ILocation, Location>();
-        dsp.AddTransient<IVessel, Vessel>();
-        dsp.Commit();
+        DtoJsonConverterFactory converter = new(tf);
+        converter.ShouldApplyMagic = true;
 
-        TypesForest tf = new(dsp);
+        var options = new JsonSerializerOptions { WriteIndented = true };
+        options.Converters.Add(converter);
 
-        DtoBuilder dtoBuilder = new(tf);
+        string json = JsonSerializer.Serialize(shipCalls, options);
 
-        Trace.WriteLine(dtoBuilder.GenerateHandlerSkeleton<IVessel>(true));
+        Console.WriteLine(json);
+
+        var res = JsonSerializer.Deserialize<List<IShipCall>>(json, options);
+
+        Assert.That(JsonSerializer.Serialize<object>(res, options), Is.EqualTo(json));
     }
 
 }

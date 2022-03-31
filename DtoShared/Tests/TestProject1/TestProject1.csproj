@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\DtoBuilder\Library\DtoBuilder.csproj" />
+    <ProjectReference Include="..\..\..\DtoJsonConverter\Library\DtoJsonConverter.csproj" />
     <ProjectReference Include="..\..\Library\DtoShared.csproj" />
   </ItemGroup>
 

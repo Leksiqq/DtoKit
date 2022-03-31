@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Net.Leksi.Dto;
 using NUnit.Framework;
+using System.Collections.Generic;
 using System.Diagnostics;
 using TestProject1.Dto1;
 
@@ -33,18 +34,32 @@ public class DtoSharedUnitTest
         IHostBuilder hostBuilder = Host.CreateDefaultBuilder()
             .ConfigureServices(serviceCollection =>
             {
-                serviceCollection.AddTransient<DtoServiceProvider>();
-                serviceCollection.AddTransient<ILine, Line>();
+                DtoServiceProvider.Install(serviceCollection, services =>
+                {
+                    services.AddTransient<ILine, Line>();
+                });
+                DtoServiceProvider.Install(serviceCollection, services =>
+                {
+                    services.AddTransient<IRoute, Route>();
+                });
             })
             ;
         IHost host = hostBuilder.Build();
         host.RunAsync();
 
-        DtoServiceProvider dtoSp = host.Services.GetRequiredService<DtoServiceProvider>();
-        dtoSp.AddTransient<ILine>();
-        DtoServiceProvider dtoSp1 = host.Services.GetRequiredService<DtoServiceProvider>();
-        dtoSp1.AddTransient<ILine, Line>();
 
-        ILine line = dtoSp.GetRequiredService<ILine>();
+        foreach (DtoServiceProvider dtoSp in host.Services.GetServices<DtoServiceProvider>())
+        {
+            Trace.WriteLine(dtoSp.IsRegistered<ILine>());
+            Trace.WriteLine(dtoSp.IsRegistered<IRoute>());
+            ILine line = dtoSp.GetService<ILine>();
+            IRoute route = dtoSp.GetService<IRoute>();
+
+            Trace.WriteLine(line);
+            Trace.WriteLine(route);
+
+            Trace.WriteLine("");
+        }
+
     }
 }

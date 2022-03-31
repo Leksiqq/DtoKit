@@ -31,11 +31,11 @@ public class ValueRequestEventArgs : EventArgs
     {
         get
         {
-            return _propertyInfo.GetValue(Target);
+            return _propertyInfo?.GetValue(Target);
         }
         set
         {
-            if(Target is null)
+            if(_propertyInfo is null)
             {
                 Target = value;
             }

@@ -10,10 +10,12 @@ namespace TestProject1.Dto1;
 public class ShipCall : IShipCall
 {
     [Key]
-    public int ID_ROUTE { get; set; }
-    [Key]
     public string ID_LINE { get; set; }
-    public Route Route { get; set; }
+
+    [Key]
+    public int ID_ROUTE { get; set; }
+
+    public Route RouteImpl { get; set; }
 
     public string Voyage { get; set; }
 
@@ -31,8 +33,7 @@ public class ShipCall : IShipCall
 
     public ShipCallCondition Condition { get; set; }
 
-    [Alias(nameof(Route))]
-    IRoute IShipCall.Route => Route;
-    [Alias(nameof(Location))]
+    [AliasFor(nameof(RouteImpl))]
+    IRoute IShipCall.Route => RouteImpl;
     ILocation IShipCall.Location => Location;
 }

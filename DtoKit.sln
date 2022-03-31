@@ -7,9 +7,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{E0D62E74
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DtoShared", "DtoShared\Library\DtoShared.csproj", "{9DB58305-173B-4206-A302-DB64087A9E0E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestProject1", "DtoShared\Tests\TestProject1\TestProject1.csproj", "{4757BE2D-CE54-4805-A17A-5F446A4ABA97}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestProject1", "DtoShared\Tests\TestProject1\TestProject1.csproj", "{4757BE2D-CE54-4805-A17A-5F446A4ABA97}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DtoBuilder", "DtoBuilder\Library\DtoBuilder.csproj", "{EA2EBB40-168E-4B72-8DD5-D100AF00035F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DtoJsonConverter", "DtoJsonConverter\Library\DtoJsonConverter.csproj", "{32AC4373-72C9-4273-8DB9-93A61C17A4D2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -29,6 +31,10 @@ Global
 		{EA2EBB40-168E-4B72-8DD5-D100AF00035F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EA2EBB40-168E-4B72-8DD5-D100AF00035F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EA2EBB40-168E-4B72-8DD5-D100AF00035F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{32AC4373-72C9-4273-8DB9-93A61C17A4D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{32AC4373-72C9-4273-8DB9-93A61C17A4D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{32AC4373-72C9-4273-8DB9-93A61C17A4D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{32AC4373-72C9-4273-8DB9-93A61C17A4D2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -12,9 +12,7 @@ public class Route : IRoute
 
     public Vessel Vessel { get; set; }
 
-    [Alias(nameof(Line))]
     ILine IRoute.Line => Line;
 
-    [Alias(nameof(Vessel))]
-    IVesselShort IRoute.Vessel => Vessel;
+    IVessel IRoute.Vessel => Vessel;
 }

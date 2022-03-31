@@ -4,5 +4,5 @@ public interface IRoute
 {
     ILine Line { get; }
 
-    IVesselShort Vessel { get; }
+    IVessel Vessel { get; }
 }
