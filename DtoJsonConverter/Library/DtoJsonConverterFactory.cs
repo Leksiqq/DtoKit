@@ -29,6 +29,10 @@ public class DtoJsonConverterFactory : JsonConverterFactory
 {
 
     private object? _target = null;
+    private bool _used = false;
+    private bool _useEndOfDataNull = true;
+    private bool _withMagic = false;
+    private bool _withOnlyKeysForRepeated = true;
 
     internal TypesForest TypesForest { get; init; }
 
@@ -87,19 +91,45 @@ public class DtoJsonConverterFactory : JsonConverterFactory
     /// end of data series transfer (see also <seealso cref="Net.Leksi.PartialLoader.PartialLoader{T}"/>)
     /// </para>
     /// </summary>
-    public bool ShouldUseEndOfDataNull { get; set; } = true;
+    public bool UseEndOfDataNull
+    {
+        get => _useEndOfDataNull;
+        set
+        {
+            CheckUsed();
+            _useEndOfDataNull = value;
+        }
+    }
 
     /// <summary>
     /// <para xml:lang="ru">
-    /// Значение свойства <c>true</c> указывает, что при <see cref="ShouldUseEndOfDataNull"/><c> == true</c> встретился элемент null в списке верхнего уровня
+    /// Значение свойства <c>true</c> указывает, что при <see cref="UseEndOfDataNull"/><c> == true</c> встретился элемент null в списке верхнего уровня
     /// </para>
     /// <para xml:lang="en">
-    /// The <c>true</c> property value indicates that when <see cref="ShouldUseEndOfDataNull"/><c> == true</c>, a null element was encountered in the top-level list
+    /// The <c>true</c> property value indicates that when <see cref="UseEndOfDataNull"/><c> == true</c>, a null element was encountered in the top-level list
     /// </para>
     /// </summary>
     public bool IsEndOfData { get; internal set; }
 
-    public bool ShouldApplyMagic { get; set; }
+    public bool WithMagic
+    {
+        get => _withMagic;
+        set
+        {
+            CheckUsed();
+            _withMagic = value;
+        }
+    }
+
+    public bool WithKeyOnlyForRepeated
+    {
+        get => _withOnlyKeysForRepeated;
+        set
+        {
+            CheckUsed();
+            _withOnlyKeysForRepeated = value;
+        }
+    }
 
 
     public DtoJsonConverterFactory(TypesForest typesForest)
@@ -113,6 +143,7 @@ public class DtoJsonConverterFactory : JsonConverterFactory
     /// <inheritdoc/>
     public override bool CanConvert(Type typeToConvert)
     {
+        _used = true;
         // Если вызвана десериализация для одного из типов-заглушек: AppendableListStub<> или RewritableListStub<>,
         // используемых для 2) варианта применения (см. описание класса)
         if (TypesForest.ServiceProvider.Select(sd => sd.ServiceType).Any(t => typeof(ListStub<>).MakeGenericType(new Type[] { t }).IsAssignableFrom(typeToConvert)))
@@ -156,6 +187,14 @@ public class DtoJsonConverterFactory : JsonConverterFactory
         return converter;
     }
     #endregion
+
+    private void CheckUsed()
+    {
+        if (_used)
+        {
+            throw new InvalidOperationException("Cannot configure after using.");
+        }
+    }
 
 }
 

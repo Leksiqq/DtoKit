@@ -8,5 +8,6 @@ namespace Net.Leksi.Dto
         public PropertyInfo? PropertyInfo { get; set; } = null;
 
         public TypeNode TypeNode { get; set; } = null!;
+        public bool IsNullable { get; set; } = false;
     }
 }

@@ -4,76 +4,68 @@ namespace Net.Leksi.Dto;
 
 public class ValueRequestEventArgs : EventArgs
 {
-    internal static readonly object NewValue = new();
-
-    private PropertyInfo _propertyInfo;
+    private PropertyInfo? _propertyInfo;
     private string _path;
-    private ValueRequestStatus _status = ValueRequestStatus.Pending;
-
-    internal void SetPropertyInfo(PropertyInfo propertyInfo)
-    {
-        _propertyInfo = propertyInfo;
-    }
-
-    internal object Target { get; set; }
-
-    internal void SetPath(string path)
-    {
-        _path = path;
-    }
-
-    internal void ResetStatus()
-    {
-        _status = ValueRequestStatus.Pending;
-    }
+    private object _target;
+    private ValueRequestKind _kind;
+    private bool _isReset = false;
+    internal bool IsReset => _isReset;
 
     public object Value
     {
         get
         {
-            return _propertyInfo?.GetValue(Target);
+            return (_kind is ValueRequestKind.Terminal) ? _propertyInfo?.GetValue(_target) : _target;
         }
         set
         {
-            if(_propertyInfo is null)
+            if (IsCommited)
             {
-                Target = value;
+                throw new InvalidOperationException("Request is already terminated.");
+            }
+            if (_kind is ValueRequestKind.NotNullableNode)
+            {
+                throw new InvalidOperationException("At NotNullableNode request a value cannot be assigned.");
+            }
+            if (_kind is ValueRequestKind.NullableNode)
+            {
+                if(value is { })
+                {
+                    throw new InvalidOperationException("At NullableNode request only null can be assigned.");
+                }
+                _isReset = true;
+                IsCommited = true;
             }
             else
             {
-                _propertyInfo.SetValue(Target, value);
+                _propertyInfo.SetValue(_target, value);
             }
         }
     }
-    public string Path 
+    public string Path => _path;
+
+    public ValueRequestKind Kind => _kind;
+
+    public Type ExpectedType => _propertyInfo?.PropertyType ?? _target.GetType();
+
+    public bool IsCommited { get; private set; } = false;
+
+    internal void Init(PropertyInfo propertyInfo, object target, string path, ValueRequestKind kind)
     {
-        get
-        {
-            return _path;
-        }
+        _propertyInfo = propertyInfo;
+        _target = target;
+        _path = path;
+        _kind = kind;
+        IsCommited = false;
     }
-    public ValueRequestStatus Status
+
+    public void Commit()
     {
-        get
+        if (IsCommited)
         {
-            return (ValueRequestStatus)_status;
+            throw new InvalidOperationException("Request is already confirmed.");
         }
-        set
-        { 
-            if(_status is not ValueRequestStatus.Pending || value is ValueRequestStatus.Pending)
-            {
-                throw new InvalidOperationException();
-            }
-            _status = value;
-        }
+        IsCommited = true;
     }
-    public void CreateDefault()
-    {
-        if(Target is { })
-        {
-            throw new InvalidOperationException();
-        }
-        Value = NewValue;
-        Status = ValueRequestStatus.Node;
-    }
+
 }

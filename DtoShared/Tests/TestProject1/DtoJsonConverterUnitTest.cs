@@ -8,6 +8,7 @@ using System.Diagnostics;
 using TestProject1.Dto1;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
+using DeepEqual.Syntax;
 
 namespace TestProject1;
 
@@ -38,42 +39,6 @@ public class DtoJsonConverterUnitTest
         dsp.AddTransient<ILocation, Location>();
         dsp.AddTransient<IRoute, Route>();
         dsp.AddTransient<ILine, Line>();
-        dsp.AddTransient<IVesselShort, Vessel>();
-
-        TypesForest tf = new(dsp);
-
-        DtoBuilder dtoBuilder = new(tf);
-
-        dtoBuilder.ShouldAutoCreateNotNullable = true;
-
-        dtoBuilder.ValueRequest += DtoBuilder_ValueRequest;
-
-        IShipCall shipCall = dtoBuilder.Build<IShipCall>();
-
-        DtoJsonConverterFactory converter = new(tf);
-
-        JsonSerializerOptions options = new();
-        options.Converters.Add(converter);
-
-        string json = JsonSerializer.Serialize(shipCall, options);
-
-        Console.WriteLine(json);
-    }
-
-    private void DtoBuilder_ValueRequest(ValueRequestEventArgs args)
-    {
-        Trace.WriteLine(args.Path);
-        args.Status = ValueRequestStatus.Node;
-    }
-
-    [Test]
-    public void Test3()
-    {
-        DtoServiceProvider dsp = new(null);
-        dsp.AddTransient<IShipCall, ShipCall>();
-        dsp.AddTransient<ILocation, Location>();
-        dsp.AddTransient<IRoute, Route>();
-        dsp.AddTransient<ILine, Line>();
         dsp.AddTransient<IVessel, Vessel>();
         dsp.Commit();
 
@@ -81,7 +46,45 @@ public class DtoJsonConverterUnitTest
 
         DtoBuilder dtoBuilder = new(tf);
 
-        dtoBuilder.ShouldAutoCreateNotNullable = true;
+        dtoBuilder.ValueRequest += args =>
+        {
+            Trace.WriteLine(args.Path);
+            if(args.Kind is ValueRequestKind.Terminal)
+            {
+                args.Commit();
+            }
+        };
+
+        IShipCall shipCall = dtoBuilder.Build<IShipCall>();
+
+        DtoJsonConverterFactory converter = new(tf) { WithMagic = true, WithKeyOnlyForRepeated = false };
+
+        JsonSerializerOptions options = new() {WriteIndented = true };
+        options.Converters.Add(converter);
+
+        string json = JsonSerializer.Serialize(shipCall, options);
+
+        Console.WriteLine(json);
+    }
+
+    [Test]
+    [TestCase(true, true)]
+    [TestCase(true, false)]
+    [TestCase(false, true)]
+    [TestCase(false, false)]
+    public void Test3(bool withMagic, bool withKeyOnly)
+    {
+        DtoServiceProvider dsp = new(null);
+        dsp.AddTransient<IShipCallForListing, ShipCall>();
+        dsp.AddTransient<ILocation, Location>();
+        dsp.AddTransient<IRouteShort, Route>();
+        dsp.AddTransient<ILine, Line>();
+        dsp.AddTransient<IVesselShort, Vessel>();
+        dsp.Commit();
+
+        TypesForest tf = new(dsp);
+
+        DtoBuilder dtoBuilder = new(tf);
 
         int i = 1;
 
@@ -90,178 +93,84 @@ public class DtoJsonConverterUnitTest
             switch (args.Path)
             {
                 case "/ID_LINE":
-                    //args.CreateDefault();
                     args.Value = "TRE";
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
                     break;
                 case "/ID_ROUTE":
-                    //args.CreateDefault();
                     args.Value = i;
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
                     break;
                 case "/Route/ID_LINE":
-                    //args.CreateDefault();
                     args.Value = "TRE";
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
                     break;
                 case "/Route/ID_RHEAD":
-                    //args.CreateDefault();
                     args.Value = 1;
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
                     break;
                 case "/Route/Line/ID_LINE":
-                    //args.CreateDefault();
                     args.Value = "TRE";
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
                     break;
                 case "/Route/Line/Name":
-                    //args.CreateDefault();
                     args.Value = "TRE";
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
                     break;
                 case "/Route/Vessel/ID_VESSEL":
-                    //args.CreateDefault();
                     args.Value = "VARYAG";
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
                     break;
                 case "/Route/Vessel/Name":
-                    //args.CreateDefault();
                     args.Value = "VARYAG";
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
                     break;
                 case "/Voyage":
-                    //args.CreateDefault();
                     args.Value = "VAR22001";
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
                     break;
                 case "/VoyageAlt":
-                    //args.CreateDefault();
-                    //args.Value = ...;
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
                     break;
                 case "/Location/ID_LOCATION":
-                    //args.CreateDefault();
                     args.Value = i.ToString();
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
                     break;
                 case "/Location/Type":
-                    //args.CreateDefault();
                     args.Value = LocationType.Port;
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
                     break;
                 case "/Location/Unlocode":
-                    //args.CreateDefault();
-                    //args.Value = ...;
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
                     break;
                 case "/Location/Name":
-                    //args.CreateDefault();
-                    args.Value = $"Port{i}";
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
                     break;
                 case "/ScheduledArrival":
-                    //args.CreateDefault();
-                    //args.Value = ...;
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
                     break;
                 case "/ActualArrival":
-                    //args.CreateDefault();
-                    //args.Value = ...;
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
                     break;
                 case "/ScheduledDeparture":
-                    //args.CreateDefault();
-                    //args.Value = ...;
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
                     break;
                 case "/ActualDeparture":
-                    //args.CreateDefault();
-                    //args.Value = ...;
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
                     break;
                 case "/Condition":
-                    //args.CreateDefault();
-                    //args.Value = ...;
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
                     break;
-                case "/Route/Vessel/Port/ID_LOCATION":
-                    args.Value = (i + 10).ToString();
-                    args.Status = ValueRequestStatus.Node;
-                    break;
-                case "/Route/Vessel/Port/Type":
-                    args.Value = LocationType.Port;
-                    args.Status = ValueRequestStatus.Node;
-                    break;
-                case "/Route/Vessel/Port/Unlocode":
-                    args.Status = ValueRequestStatus.Node;
-                    break;
-                case "/Route/Vessel/Port/Name":
-                    args.Value = $"Port{i + 10}";
-                    args.Status = ValueRequestStatus.Node;
-                    break;
-                case "/Route/Vessel/Length":
-                    args.Status = ValueRequestStatus.Node;
-                    break;
-                case "/Route/Vessel/Width":
-                    args.Status = ValueRequestStatus.Node;
-                    break;
-                case "/Route/Vessel/Height":
-                    args.Status = ValueRequestStatus.Node;
-                    break;
-                case "/Route/Vessel/Brutto":
-                    args.Status = ValueRequestStatus.Node;
-                    break;
-                case "/Route/Vessel/Netto":
-                    args.Status = ValueRequestStatus.Node;
-                    break;
-                case "/Route/Vessel/LineMeters":
-                    args.Status = ValueRequestStatus.Node;
-                    break;
-                case "/Route/Vessel/Description":
-                    args.Status = ValueRequestStatus.Node;
-                    break;
-                case "/Route/Vessel/RiffCount":
-                    args.Status = ValueRequestStatus.Node;
-                    break;
-                case "/Route/Vessel/IsOcean":
-                    args.Status = ValueRequestStatus.Node;
-                    break;
-                case "/Route/Vessel/CallSign":
-                    args.Status = ValueRequestStatus.Node;
-                    break;
-
             }
         };
 
-        List<IShipCall> shipCalls = new();
+        List<IShipCallForListing> shipCalls = new();
 
-        for(; i <= 2; i++)
+        for(; i <= 3; i++)
         {
-            shipCalls.Add(dtoBuilder.Build<IShipCall>());
+            shipCalls.Add(dtoBuilder.Build<IShipCallForListing>());
         }
 
-        DtoJsonConverterFactory converter = new(tf);
-        converter.ShouldApplyMagic = true;
-
+        DtoJsonConverterFactory converter = new(tf) { WithMagic = withMagic, WithKeyOnlyForRepeated = withKeyOnly };
         var options = new JsonSerializerOptions { WriteIndented = true };
         options.Converters.Add(converter);
 
@@ -269,7 +178,17 @@ public class DtoJsonConverterUnitTest
 
         Console.WriteLine(json);
 
-        var res = JsonSerializer.Deserialize<List<IShipCall>>(json, options);
+        converter = new(tf) { WithMagic = withMagic, WithKeyOnlyForRepeated = false };
+        options = new JsonSerializerOptions { WriteIndented = true };
+        options.Converters.Add(converter);
+
+        var res = JsonSerializer.Deserialize<List<IShipCallForListing>>(json, options);
+
+        shipCalls.ShouldDeepEqual(res);
+
+        converter = new(tf) { WithMagic = withMagic, WithKeyOnlyForRepeated = withKeyOnly };
+        options = new JsonSerializerOptions { WriteIndented = true };
+        options.Converters.Add(converter);
 
         Assert.That(JsonSerializer.Serialize<object>(res, options), Is.EqualTo(json));
     }

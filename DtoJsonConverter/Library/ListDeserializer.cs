@@ -83,7 +83,7 @@ internal class ListDeserializer<T> : JsonConverter<ListStub<T>>
                 }
             }
             T? value = JsonSerializer.Deserialize<T>(ref reader, options);
-            if (value is null && _factory.ShouldUseEndOfDataNull)
+            if (value is null && _factory.UseEndOfDataNull)
             {
                 _factory.IsEndOfData = true;
             }

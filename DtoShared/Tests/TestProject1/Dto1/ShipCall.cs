@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace TestProject1.Dto1;
 
-public class ShipCall : IShipCall
+public class ShipCall : IShipCall, IShipCallForListing
 {
     [Key]
     public string ID_LINE { get; set; }
@@ -33,7 +33,13 @@ public class ShipCall : IShipCall
 
     public ShipCallCondition Condition { get; set; }
 
-    [AliasFor(nameof(RouteImpl))]
+    [ActualProperty(nameof(RouteImpl))]
     IRoute IShipCall.Route => RouteImpl;
+
+    [ActualProperty(nameof(RouteImpl))]
+    IRouteShort IShipCallForListing.Route => RouteImpl;
+
     ILocation IShipCall.Location => Location;
+
+    ILocation IShipCallForListing.Location => Location;
 }

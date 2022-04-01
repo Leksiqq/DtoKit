@@ -1,48 +1,21 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
-using System.Text;
+﻿using System.Text;
 
 namespace Net.Leksi.Dto;
 
 public class DtoBuilder { 
-    private class KeyComparer : IEqualityComparer<object>
-    {
-        public new bool Equals(object? x, object? y)
-        {
-            if (x == y)
-            {
-                return true;
-            }
-            if (x == null || y == null)
-            {
-                return false;
-            }
-            return ((object[])x).Length == ((object[])y).Length && ((object[])x).Zip((object[])y).All(v => v.First.Equals(v.Second));
-        }
-
-        public int GetHashCode([DisallowNull] object obj)
-        {
-            int result = ((object[])obj).Select(v => v.GetHashCode()).Aggregate(0, (v, res) => unchecked (v + res));
-            return result;
-        }
-    }
-
+    
     public event ValueRequestEventHandler ValueRequest;
 
     private const string Slash = "/";
-    private const string Dot = ".";
+    private const string IDontKnowWhy = "Какая-то неведомая фигня";
 
-    private static readonly KeyComparer _keyComparer = new();
-
-    private TypesForest _typesForest;
-    private List<string> _paths = new();
-    private Dictionary<Type, Dictionary<object[], object>> _objectsCache = new();
-    private List<string> _ignoredPaths = new();
+    private readonly TypesForest _typesForest;
+    private readonly List<string> _paths = new();
+    private readonly List<string> _ignoredPaths = new();
+    private readonly ObjectCache _objectCache = new();
+    private readonly Dictionary<Type, object> _probeObjects = new();
 
     public object? Target { get; set; } = null;
-
-    public bool ShouldAutoCreateNotNullable { get; set; } = false;
 
     public DtoBuilder(TypesForest typesForest)
     {
@@ -54,7 +27,7 @@ public class DtoBuilder {
     {
         if (!_typesForest.ServiceProvider.IsRegistered(typeof(T)))
         {
-            throw new ArgumentException(nameof(T));
+            throw new ArgumentException($"{typeof(T)} is not registered.");
         }
         _typesForest.PlantTypeTree(typeof(T));
         _ignoredPaths.Clear();
@@ -67,15 +40,8 @@ public class DtoBuilder {
         return result;
     }
 
-    public void ClearObjectCache()
+    public string GenerateHandlerSkeleton<T>() where T : class
     {
-        _objectsCache.Clear();
-    }
-
-    public string GenerateHandlerSkeleton<T>(bool WithIsAutoCreateDefault) where T : class
-    {
-        bool IsAutoCreateDefaultSave = ShouldAutoCreateNotNullable;
-        ShouldAutoCreateNotNullable = WithIsAutoCreateDefault;
         StringBuilder sb = new();
         sb.Append(@"
 (ValueRequestEventArgs args) => {
@@ -83,25 +49,31 @@ public class DtoBuilder {
         ValueRequestEventHandler eh = args =>
         {
             sb.Append(@$"
-        case ""{args.Path}"":
-            //args.CreateDefault();
+        case ""{args.Path}"":");
+            switch (args.Kind)
+            {
+                case ValueRequestKind.Terminal:
+                    sb.Append(@"
             //args.Value = ...;
-            //args.Status = ValueRequestStatus.Node;
-            //args.Status = ValueRequestStatus.Terminal;
+            //args.Commit();");
+                    args.Commit();
+                    break;
+                case ValueRequestKind.NullableNode:
+                    sb.Append(@"
+            //args.Value = null;
+            //args.Commit();");
+                    break;
+                case ValueRequestKind.NotNullableNode:
+                    sb.Append(@"
+            //args.Commit();");
+                    break;
+            }
+            sb.Append(@"
             break;");
-            if(args.Target is { })
-            {
-                args.Status = ValueRequestStatus.Node;
-            }
-            else
-            {
-                args.CreateDefault();
-            }
         };
         ValueRequest += eh;
         Build<T>();
         ValueRequest -= eh;
-        ShouldAutoCreateNotNullable = IsAutoCreateDefaultSave;
         sb.AppendLine(@"
     }
 }");
@@ -111,44 +83,37 @@ public class DtoBuilder {
     private object Build(PropertyNode propertyNode, object target)
     {
         ValueRequestEventArgs eventArgs = new();
-        eventArgs.Target = target;
-        if (
-            eventArgs.Target is null 
-            && ShouldAutoCreateNotNullable 
-            && (
-                (
-                    propertyNode.PropertyInfo is { } pi 
-                    && Nullable.GetUnderlyingType(pi.PropertyType) is null
-                )
-                || propertyNode.PropertyInfo is null
-            )
-        )
+        if (target is null)
         {
-            eventArgs.Target = _typesForest.ServiceProvider.GetService(propertyNode.TypeNode.Type);
-        }
-        if (eventArgs.Target is null)
-        {
-            eventArgs.SetPropertyInfo(propertyNode.PropertyInfo);
-            eventArgs.SetPath($"{Slash}{string.Join(Slash, _paths)}");
-            ValueRequest!.Invoke(eventArgs);
-            if (eventArgs.Status is ValueRequestStatus.Pending)
+            if(_probeObjects.TryGetValue(propertyNode.TypeNode.Type, out object probe))
             {
-                _ignoredPaths.Add(eventArgs.Path);
+                _probeObjects.Remove(propertyNode.TypeNode.Type);
+                target = probe;
             }
-            if((eventArgs.Target is null && _ignoredPaths.Count > 0) || (eventArgs.Target == ValueRequestEventArgs.NewValue))
+            else
             {
-                eventArgs.Target = _typesForest.ServiceProvider.GetService(propertyNode.TypeNode.Type);
-            }
-            if (eventArgs.Status is ValueRequestStatus.Terminal)
-            {
-                return eventArgs.Target;
+                target = _typesForest.ServiceProvider.GetService(propertyNode.TypeNode.Type);
             }
         }
-        if(eventArgs.Target is null)
+        ValueRequestKind valueRequestKind = 
+            propertyNode.IsNullable 
+                ? ValueRequestKind.NullableNode 
+                : ValueRequestKind.NotNullableNode
+            ;
+        eventArgs.Init(null, target, $"{Slash}{string.Join(Slash, _paths)}", valueRequestKind);
+        ValueRequest!.Invoke(eventArgs);
+        if (eventArgs.IsReset)
         {
+            if(!_probeObjects.TryAdd(propertyNode.TypeNode.Type, target))
+            {
+                throw new Exception(IDontKnowWhy);
+            }
             return null;
         }
-        target = eventArgs.Target;
+        if (eventArgs.IsCommited)
+        {
+            return target;
+        }
         if(propertyNode.TypeNode.ChildNodes is { } children)
         {
             _typesForest.ConfirmTypeNode(propertyNode.TypeNode, target.GetType());
@@ -159,11 +124,9 @@ public class DtoBuilder {
                 _paths.Add(child.PropertyName);
                 if (child.TypeNode.ChildNodes is null)
                 {
-                    eventArgs.SetPath($"{Slash}{string.Join(Slash, _paths)}");
-                    eventArgs.ResetStatus();
-                    eventArgs.SetPropertyInfo(child.PropertyInfo);
+                    eventArgs.Init(child.PropertyInfo, target, $"{Slash}{string.Join(Slash, _paths)}", ValueRequestKind.Terminal);
                     ValueRequest!.Invoke(eventArgs);
-                    if (eventArgs.Status is ValueRequestStatus.Pending)
+                    if (!eventArgs.IsCommited)
                     {
                         _ignoredPaths.Add(eventArgs.Path);
                     }
@@ -178,31 +141,21 @@ public class DtoBuilder {
                 if(childPosition == propertyNode.TypeNode.KeysCount)
                 {
                     key = children.Take(propertyNode.TypeNode.KeysCount).Select(v => v.PropertyInfo.GetValue(target)).ToArray();
-                    if(key.Any(v => v is null))
+                    if(_objectCache.TryGet(propertyNode.TypeNode.Type, key, out object cachedObject))
                     {
-                        key = null;
-                    } 
-                    else
-                    {
-                        if (_objectsCache.ContainsKey(propertyNode.TypeNode.Type))
+                        if (!_probeObjects.TryAdd(propertyNode.TypeNode.Type, target))
                         {
-                            if (_objectsCache[propertyNode.TypeNode.Type].TryGetValue(key, out object cachedObject))
-                            {
-                                target = cachedObject;
-                                break;
-                            }
+                            throw new Exception(IDontKnowWhy);
                         }
+                        target = cachedObject;
+                        key = null;
+                        break;
                     }
-
                 }
             }
             if(key is { })
             {
-                if (!_objectsCache.ContainsKey(propertyNode.TypeNode.Type))
-                {
-                    _objectsCache.Add(propertyNode.TypeNode.Type, new Dictionary<object[], object>(_keyComparer));
-                }
-                _objectsCache[propertyNode.TypeNode.Type][key] = target;
+                _objectCache.Add(propertyNode.TypeNode.Type, key, target);
             }
         }
         return target;

@@ -24,16 +24,18 @@ internal class DtoConverter<T> : JsonConverter<T>
     private const string MagicPropertyName = "$magic";
     private const string MagicPropertyValue = "applied";
     private const string DollarSign = "$";
-
-    private readonly Dictionary<Type, Dictionary<string, PropertyInfo>> _readerPropertiesCache = new();
-
-    private readonly Dictionary<Type, List<PropertyInfo>> _writerPropertiesCache = new();
+    private const string KeyOnlyPropertyName = "$keyOnly";
 
     private readonly DtoJsonConverterFactory _factory;
+    private ObjectCache? _objectCache = null;
 
     public DtoConverter(DtoJsonConverterFactory factory)
     {
         _factory = factory;
+        if (_factory.WithKeyOnlyForRepeated)
+        {
+            _objectCache = new();
+        }
     }
 
     #region Реализация JsonConverter<T>
@@ -49,6 +51,10 @@ internal class DtoConverter<T> : JsonConverter<T>
     /// </exception>
     public override T? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
+        if (_objectCache is null)
+        {
+            _objectCache = new();
+        }
         if (reader.TokenType == JsonTokenType.StartObject)
         {
 
@@ -85,10 +91,17 @@ internal class DtoConverter<T> : JsonConverter<T>
             Type itemType = item.GetType();
             _factory.TypesForest.ConfirmTypeNode(typeNode, itemType);
 
+            int propertyPosition = 0;
+            object[]? key = null;
+
             while (reader.Read())
             {
                 if (reader.TokenType == JsonTokenType.EndObject)
                 {
+                    if(key is { })
+                    {
+                        _objectCache.Add(typeNode.Type, key, item);
+                    }
                     return item;
                 }
 
@@ -106,7 +119,19 @@ internal class DtoConverter<T> : JsonConverter<T>
 
                 if(propertyName.StartsWith(DollarSign))
                 {
-                    var obj = JsonSerializer.Deserialize<object>(ref reader);
+                    JsonElement obj = (JsonElement)JsonSerializer.Deserialize<object>(ref reader);
+                    if(propertyName == KeyOnlyPropertyName && obj.ValueKind is JsonValueKind.True)
+                    {
+                        if (_objectCache.TryGet(typeNode.Type, key, out object cachedObject))
+                        {
+                            if (_factory.ObjectsPool.TryGetValue(typeof(T), out List<object> pool))
+                            {
+                                pool.Add(item);
+                            }
+                            item = (T)cachedObject;
+                            key = null;
+                        }
+                    }
                 }
                 else 
                 {
@@ -237,6 +262,12 @@ internal class DtoConverter<T> : JsonConverter<T>
                         }
                         propertyValueAssigned = true;
                     }
+                    propertyPosition++;
+                    if (propertyPosition == typeNode.KeysCount)
+                    {
+                        key = typeNode.ChildNodes!.Take(typeNode.KeysCount).Select(v => v.PropertyInfo.GetValue(item)).ToArray();
+                    }
+
                 }
 
             }
@@ -260,22 +291,43 @@ internal class DtoConverter<T> : JsonConverter<T>
             _factory.TypesForest.ConfirmTypeNode(typeNode, actualType);
 
             writer.WriteStartObject();
-            if (_factory.ShouldApplyMagic)
+            if (_factory.WithMagic)
             {
                 writer.WritePropertyName(MagicPropertyName);
                 writer.WriteStringValue(MagicPropertyValue);
             }
-            foreach (PropertyNode propertyNode in typeNode.ChildNodes)
+            int propertyPosition = 0;
+            object[]? key = null;
+            if(typeNode.ChildNodes is { } children)
             {
-                writer.WritePropertyName(propertyNode.PropertyName);
-                if (propertyNode.PropertyInfo.PropertyType.IsEnum)
+                foreach (PropertyNode propertyNode in typeNode.ChildNodes)
                 {
-                    writer.WriteStringValue(propertyNode.PropertyInfo.GetValue(value)?.ToString());
+                    writer.WritePropertyName(propertyNode.PropertyName);
+                    if (propertyNode.PropertyInfo!.PropertyType.IsEnum)
+                    {
+                        writer.WriteStringValue(propertyNode.PropertyInfo.GetValue(value)?.ToString());
+                    }
+                    else
+                    {
+                        JsonSerializer.Serialize(writer, propertyNode.PropertyInfo.GetValue(value), propertyNode.TypeNode.Type, options);
+                    }
+                    propertyPosition++;
+                    if (_factory.WithKeyOnlyForRepeated && propertyPosition == typeNode.KeysCount)
+                    {
+                        key = children.Take(typeNode.KeysCount).Select(v => v.PropertyInfo.GetValue(value)).ToArray();
+                        if (_objectCache.TryGet(typeNode.Type, key, out object cachedObject))
+                        {
+                            key = null;
+                            writer.WritePropertyName(KeyOnlyPropertyName);
+                            writer.WriteBooleanValue(true);
+                            break;
+                        }
+                    }
                 }
-                else
-                {
-                    JsonSerializer.Serialize(writer, propertyNode.PropertyInfo.GetValue(value), propertyNode.TypeNode.Type, options);
-                }
+            }
+            if(_factory.WithKeyOnlyForRepeated && key is { })
+            {
+                _objectCache.Add(typeNode.Type, key, value);
             }
             writer.WriteEndObject();
         }

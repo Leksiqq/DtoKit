@@ -2,7 +2,7 @@
 
 namespace TestProject1.Dto1;
 
-public class Route : IRoute
+public class Route : IRoute, IRouteShort
 {
     [Key]
     public int ID_RHEAD { get; set; }
@@ -14,5 +14,9 @@ public class Route : IRoute
 
     ILine IRoute.Line => Line;
 
+    ILine IRouteShort.Line => Line;
+
     IVessel IRoute.Vessel => Vessel;
+
+    IVesselShort IRouteShort.Vessel => Vessel;
 }

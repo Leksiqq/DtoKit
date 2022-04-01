@@ -2,11 +2,11 @@
 using Net.Leksi.Dto;
 using NUnit.Framework;
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
 using TestProject1.Dto1;
-using System.Diagnostics.CodeAnalysis;
 
 namespace TestProject1;
 
@@ -37,16 +37,23 @@ public class DtoBuilderUnitTest
         dsp.AddTransient<ILocation, Location>();
         dsp.AddTransient<IRoute, Route>();
         dsp.AddTransient<ILine, Line>();
-        dsp.AddTransient<IVesselShort, Vessel>();
+        dsp.AddTransient<IVessel, Vessel>();
         dsp.Commit();
 
         TypesForest tf = new(dsp);
 
         DtoBuilder dtoBuilder = new(tf);
 
-        dtoBuilder.ShouldAutoCreateNotNullable = true;
+        int tabPos = 35;
 
-        dtoBuilder.ValueRequest += DtoBuilder_ValueRequest;
+        dtoBuilder.ValueRequest += args =>
+        {
+            Trace.WriteLine($"{args.Path}{string.Join("", Enumerable.Range(0, tabPos - args.Path.Length).Select(v => " "))}({args.Kind})");
+            if (args.Kind is ValueRequestKind.Terminal)
+            {
+                args.Commit();
+            }
+        };
 
         dtoBuilder.Build<IShipCall>();
     }
@@ -59,29 +66,23 @@ public class DtoBuilderUnitTest
         dsp.AddTransient<ILocation, Location>();
         dsp.AddTransient<IRoute, Route>();
         dsp.AddTransient<ILine, Line>();
-        dsp.AddTransient<IVesselShort, Vessel>();
+        dsp.AddTransient<IVessel, Vessel>();
         dsp.Commit();
 
         TypesForest tf = new(dsp);
 
         DtoBuilder dtoBuilder = new(tf);
 
-        Trace.WriteLine(dtoBuilder.GenerateHandlerSkeleton<IShipCall>(true));
-    }
-
-    private void DtoBuilder_ValueRequest(ValueRequestEventArgs args)
-    {
-        Trace.WriteLine(args.Path);
-        args.Status = ValueRequestStatus.Node;
+        Trace.WriteLine(dtoBuilder.GenerateHandlerSkeleton<IShipCall>());
     }
 
     [Test]
     public void Test3()
     {
         DtoServiceProvider dsp = new(null);
-        dsp.AddTransient<IShipCall, ShipCall>();
+        dsp.AddTransient<IShipCallForListing, ShipCall>();
         dsp.AddTransient<ILocation, Location>();
-        dsp.AddTransient<IRoute, Route>();
+        dsp.AddTransient<IRouteShort, Route>();
         dsp.AddTransient<ILine, Line>();
         dsp.AddTransient<IVesselShort, Vessel>();
         dsp.Commit();
@@ -90,8 +91,6 @@ public class DtoBuilderUnitTest
 
         DtoBuilder dtoBuilder = new(tf);
 
-        dtoBuilder.ShouldAutoCreateNotNullable = true;
-
         int i = 1;
 
         dtoBuilder.ValueRequest += args =>
@@ -99,127 +98,89 @@ public class DtoBuilderUnitTest
             switch (args.Path)
             {
                 case "/ID_LINE":
-                    //args.CreateDefault();
                     args.Value = "TRE";
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
                     break;
                 case "/ID_ROUTE":
-                    //args.CreateDefault();
                     args.Value = i;
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
                     break;
                 case "/Route/ID_LINE":
-                    //args.CreateDefault();
                     args.Value = "TRE";
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
+                    break;
+                case "/Route":
                     break;
                 case "/Route/ID_RHEAD":
-                    //args.CreateDefault();
                     args.Value = 1;
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
+                    break;
+                case "/Route/Line":
                     break;
                 case "/Route/Line/ID_LINE":
-                    //args.CreateDefault();
                     args.Value = "TRE";
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
                     break;
                 case "/Route/Line/Name":
-                    //args.CreateDefault();
                     args.Value = "TRE";
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
+                    break;
+                case "/Route/Vessel":
                     break;
                 case "/Route/Vessel/ID_VESSEL":
-                    //args.CreateDefault();
                     args.Value = "VARYAG";
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
                     break;
                 case "/Route/Vessel/Name":
-                    //args.CreateDefault();
                     args.Value = "VARYAG";
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
                     break;
                 case "/Voyage":
-                    //args.CreateDefault();
                     args.Value = "VAR22001";
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
                     break;
                 case "/VoyageAlt":
-                    //args.CreateDefault();
-                    //args.Value = ...;
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
+                    break;
+                case "/Location":
                     break;
                 case "/Location/ID_LOCATION":
-                    //args.CreateDefault();
                     args.Value = i.ToString();
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
                     break;
                 case "/Location/Type":
-                    //args.CreateDefault();
                     args.Value = LocationType.Port;
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
                     break;
                 case "/Location/Unlocode":
-                    //args.CreateDefault();
-                    //args.Value = ...;
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
                     break;
                 case "/Location/Name":
-                    //args.CreateDefault();
-                    //args.Value = ...;
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
                     break;
                 case "/ScheduledArrival":
-                    //args.CreateDefault();
-                    //args.Value = ...;
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
                     break;
                 case "/ActualArrival":
-                    //args.CreateDefault();
-                    //args.Value = ...;
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
                     break;
                 case "/ScheduledDeparture":
-                    //args.CreateDefault();
-                    //args.Value = ...;
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
                     break;
                 case "/ActualDeparture":
-                    //args.CreateDefault();
-                    //args.Value = ...;
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
                     break;
                 case "/Condition":
-                    //args.CreateDefault();
-                    //args.Value = ...;
-                    args.Status = ValueRequestStatus.Node;
-                    //args.Status = ValueRequestStatus.Terminal;
+                    args.Commit();
                     break;
             }
         };
 
-        List<IShipCall> shipCalls = new();
+        List<IShipCallForListing> shipCalls = new();
 
-        for(; i <= 2; i++)
+        for(; i <= 3; i++)
         {
-            shipCalls.Add(dtoBuilder.Build<IShipCall>());
+            shipCalls.Add(dtoBuilder.Build<IShipCallForListing>());
         }
     }
 
@@ -235,7 +196,28 @@ public class DtoBuilderUnitTest
 
         DtoBuilder dtoBuilder = new(tf);
 
-        Trace.WriteLine(dtoBuilder.GenerateHandlerSkeleton<IVessel>(true));
+        Trace.WriteLine(dtoBuilder.GenerateHandlerSkeleton<IVessel>());
+    }
+
+    public class MyClass
+    {
+        // Should tell me I cannot assign a null
+        public int Age { get; set; }
+        public DateTime BirthDate { get; set; }
+        public object Family { get; set; }
+        // Should tell me I can assign a null
+        public DateTime? DateOfDeath { get; set; }
+    }
+
+    [Test]
+    public void Test5()
+    {
+        foreach (PropertyInfo pi in typeof(MyClass).GetProperties())
+        {
+            bool canBeNull = !pi.PropertyType.IsValueType && pi.GetCustomAttributes().Any(a => a.GetType().Name.Contains("NullableAttribute"))
+                || (Nullable.GetUnderlyingType(pi.PropertyType) != null);
+            Console.WriteLine($"{pi.Name}, {canBeNull}");
+        }
     }
 
 }
