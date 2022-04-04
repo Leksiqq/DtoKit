@@ -1,9 +1,5 @@
 ﻿using Net.Leksi.Dto;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace TestProject1.Dto1;
 
@@ -32,6 +28,8 @@ public class ShipCall : IShipCall, IShipCallForListing
     public DateTime ActualDeparture { get; set; }
 
     public ShipCallCondition Condition { get; set; }
+
+    public string AdditionalInfo { get; set; } = "N/A";
 
     [ActualProperty(nameof(RouteImpl))]
     IRoute IShipCall.Route => RouteImpl;

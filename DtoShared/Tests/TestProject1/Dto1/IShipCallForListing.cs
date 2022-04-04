@@ -2,7 +2,7 @@
 
 namespace TestProject1.Dto1;
 
-public interface IShipCallForListing
+public interface IShipCallForListing: IShipCallAdditionalInfo
 {
     IRouteShort Route { get; }
     string Voyage { get;}

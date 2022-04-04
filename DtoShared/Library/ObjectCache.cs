@@ -4,33 +4,13 @@ namespace Net.Leksi.Dto;
 
 public class ObjectCache
 {
-    private class KeyComparer : IEqualityComparer<object>
-    {
-        public new bool Equals(object? x, object? y)
-        {
-            if (x == y)
-            {
-                return true;
-            }
-            if (x == null || y == null)
-            {
-                return false;
-            }
-            return ((object[])x).Length == ((object[])y).Length && ((object[])x).Zip((object[])y)
-                .All(v => v.First is null && v.Second is null || v.First is { } && v.Second is { } && v.First.Equals(v.Second));
-        }
-
-        public int GetHashCode([DisallowNull] object obj)
-        {
-            int result = ((object[])obj).Select(v => v is null ? 0 : v.GetHashCode()).Aggregate(0, (v, res) => unchecked(v + res));
-            return result;
-        }
-    }
 
     private static readonly KeyComparer _keyComparer = new();
 
     private Dictionary<Type, Dictionary<object[], object>> _objectsCache = new();
 
+    public int Count => _objectsCache.Count;
+    
     public bool TryGet(Type type, object[] key, out object result)
     {
         if (_objectsCache.ContainsKey(type))
@@ -49,6 +29,11 @@ public class ObjectCache
         }
         _objectsCache[type][key] = value;
 
+    }
+
+    public void Clear()
+    {
+        _objectsCache.Clear();
     }
 
 }

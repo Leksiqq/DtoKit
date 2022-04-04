@@ -28,11 +28,15 @@ namespace Net.Leksi.Dto;
 public class DtoJsonConverterFactory : JsonConverterFactory
 {
 
+    internal event EventHandler ObjectCachesClear;
+
+    private readonly EventArgs _eventArgs = new();
+
     private object? _target = null;
     private bool _used = false;
     private bool _useEndOfDataNull = true;
     private bool _withMagic = false;
-    private bool _withOnlyKeysForRepeated = true;
+    private bool _withOnlyKeysForRepeated = false;
 
     internal TypesForest TypesForest { get; init; }
 
@@ -137,6 +141,11 @@ public class DtoJsonConverterFactory : JsonConverterFactory
         TypesForest = typesForest ?? throw new ArgumentNullException(nameof(typesForest)) ;
     }
 
+    public void ClearCaches()
+    {
+        ObjectCachesClear?.Invoke(this, _eventArgs);
+    }
+
 
     #region Реализация JsonConverterFactory
 
@@ -169,9 +178,17 @@ public class DtoJsonConverterFactory : JsonConverterFactory
         {
             // Если вызвана десериализация для одного из типов-заглушек: AppendableList<> или RewritableList<>,
             // используемых для 2) варианта применения (см. описание класса)
+            ListStubKind kind = typeToConvert.IsAssignableFrom(typeof(AppendableListStub<>).MakeGenericType(new Type[] { type })) 
+                ? ListStubKind.Appendable
+                : (
+                    typeToConvert.IsAssignableFrom(typeof(RewritableListStub<>).MakeGenericType(new Type[] { type })) 
+                    ? ListStubKind.Rewriteable
+                        : ListStubKind.Updateable
+                )
+            ;
             converter = (JsonConverter)Activator.CreateInstance(
                     typeof(ListDeserializer<>).MakeGenericType(new Type[] { type }),
-                    args: new object[] { this, typeToConvert == typeof(AppendableListStub<>).MakeGenericType(new Type[] { type }) }
+                    args: new object[] { this, kind }
                 )!;
         }
         else
@@ -182,6 +199,7 @@ public class DtoJsonConverterFactory : JsonConverterFactory
                     typeof(DtoConverter<>).MakeGenericType(new Type[] { typeToConvert }), 
                     args: new object[] { this }
                 )!;
+            ObjectCachesClear += ((IObjectCacheOwner)converter).OnObjectCachesClear;
         }
 
         return converter;

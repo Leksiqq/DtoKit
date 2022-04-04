@@ -76,6 +76,7 @@ public class DtoJsonConverterUnitTest
     {
         DtoServiceProvider dsp = new(null);
         dsp.AddTransient<IShipCallForListing, ShipCall>();
+        dsp.AddTransient<IShipCallAdditionalInfo, ShipCall>();
         dsp.AddTransient<ILocation, Location>();
         dsp.AddTransient<IRouteShort, Route>();
         dsp.AddTransient<ILine, Line>();
@@ -160,6 +161,9 @@ public class DtoJsonConverterUnitTest
                 case "/Condition":
                     args.Commit();
                     break;
+                case "/AdditionalInfo":
+                    args.Commit();
+                    break;
             }
         };
 
@@ -182,7 +186,9 @@ public class DtoJsonConverterUnitTest
         options = new JsonSerializerOptions { WriteIndented = true };
         options.Converters.Add(converter);
 
-        var res = JsonSerializer.Deserialize<List<IShipCallForListing>>(json, options);
+        var res = new List<IShipCallForListing>();
+        converter.Target = res;
+        JsonSerializer.Deserialize<RewritableListStub<IShipCallForListing>>(json, options);
 
         shipCalls.ShouldDeepEqual(res);
 
@@ -191,6 +197,35 @@ public class DtoJsonConverterUnitTest
         options.Converters.Add(converter);
 
         Assert.That(JsonSerializer.Serialize<object>(res, options), Is.EqualTo(json));
+
+        foreach(object shipCall in shipCalls)
+        {
+            ((ShipCall)shipCall).AdditionalInfo = "Additional info";
+        }
+
+        converter = new(tf) { WithMagic = withMagic, WithKeyOnlyForRepeated = withKeyOnly };
+        options = new JsonSerializerOptions { WriteIndented = true };
+        options.Converters.Add(converter);
+
+        json = JsonSerializer.Serialize(shipCalls.Select(v => (IShipCallAdditionalInfo)v), options);
+        Console.WriteLine(json);
+
+        converter = new(tf) { WithMagic = withMagic, WithKeyOnlyForRepeated = withKeyOnly };
+        options = new JsonSerializerOptions { WriteIndented = true };
+        options.Converters.Add(converter);
+
+        converter.Target = res;
+        JsonSerializer.Deserialize<UpdateableListStub<IShipCallAdditionalInfo>>(json, options);
+
+
+        converter = new(tf) { WithMagic = withMagic, WithKeyOnlyForRepeated = withKeyOnly };
+        options = new JsonSerializerOptions { WriteIndented = true };
+        options.Converters.Add(converter);
+
+        json = JsonSerializer.Serialize(res, options);
+
+        Console.WriteLine(json);
+
     }
 
 }

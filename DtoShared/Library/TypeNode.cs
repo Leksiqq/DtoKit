@@ -7,4 +7,9 @@ public class TypeNode
     public bool IsConfirmed { get; set; } = false;
     public int KeysCount { get; set; } = 0;
 
+    public object[] GetKey(object item)
+    {
+        return ChildNodes?.Take(KeysCount).Select(v => v.PropertyInfo.GetValue(item)).ToArray();
+    }
+
 }

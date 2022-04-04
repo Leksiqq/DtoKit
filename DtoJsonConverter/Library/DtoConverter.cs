@@ -19,7 +19,7 @@ namespace Net.Leksi.Dto;
 /// </para>
 /// </summary>
 /// <typeparam name="T"></typeparam>
-internal class DtoConverter<T> : JsonConverter<T>
+internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : class
 {
     private const string MagicPropertyName = "$magic";
     private const string MagicPropertyValue = "applied";
@@ -36,6 +36,11 @@ internal class DtoConverter<T> : JsonConverter<T>
         {
             _objectCache = new();
         }
+    }
+
+    public void OnObjectCachesClear(object sender, EventArgs args)
+    {
+        _objectCache.Clear();
     }
 
     #region Реализация JsonConverter<T>
@@ -265,7 +270,7 @@ internal class DtoConverter<T> : JsonConverter<T>
                     propertyPosition++;
                     if (propertyPosition == typeNode.KeysCount)
                     {
-                        key = typeNode.ChildNodes!.Take(typeNode.KeysCount).Select(v => v.PropertyInfo.GetValue(item)).ToArray();
+                        key = typeNode.GetKey(item);
                     }
 
                 }
@@ -298,11 +303,11 @@ internal class DtoConverter<T> : JsonConverter<T>
             }
             int propertyPosition = 0;
             object[]? key = null;
-            if(typeNode.ChildNodes is { } children)
+            if(typeNode.ChildNodes is { })
             {
                 foreach (PropertyNode propertyNode in typeNode.ChildNodes)
                 {
-                    writer.WritePropertyName(propertyNode.PropertyName);
+                    writer.WritePropertyName(propertyNode.SourcePropertyInfo.Name);
                     if (propertyNode.PropertyInfo!.PropertyType.IsEnum)
                     {
                         writer.WriteStringValue(propertyNode.PropertyInfo.GetValue(value)?.ToString());
@@ -314,7 +319,7 @@ internal class DtoConverter<T> : JsonConverter<T>
                     propertyPosition++;
                     if (_factory.WithKeyOnlyForRepeated && propertyPosition == typeNode.KeysCount)
                     {
-                        key = children.Take(typeNode.KeysCount).Select(v => v.PropertyInfo.GetValue(value)).ToArray();
+                        key = typeNode.GetKey(value);
                         if (_objectCache.TryGet(typeNode.Type, key, out object cachedObject))
                         {
                             key = null;
@@ -334,4 +339,5 @@ internal class DtoConverter<T> : JsonConverter<T>
     }
 
     #endregion
+
 }

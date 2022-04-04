@@ -81,6 +81,7 @@ public class DtoBuilderUnitTest
     {
         DtoServiceProvider dsp = new(null);
         dsp.AddTransient<IShipCallForListing, ShipCall>();
+        dsp.AddTransient<IShipCallAdditionalInfo, ShipCall>();
         dsp.AddTransient<ILocation, Location>();
         dsp.AddTransient<IRouteShort, Route>();
         dsp.AddTransient<ILine, Line>();
@@ -218,6 +219,24 @@ public class DtoBuilderUnitTest
                 || (Nullable.GetUnderlyingType(pi.PropertyType) != null);
             Console.WriteLine($"{pi.Name}, {canBeNull}");
         }
+    }
+
+    [Test]
+    public void Test6()
+    {
+        DtoServiceProvider dsp = new(null);
+        dsp.AddTransient<IShipCallForListing, ShipCall>();
+        dsp.AddTransient<ILocation, Location>();
+        dsp.AddTransient<IRoute, Route>();
+        dsp.AddTransient<ILine, Line>();
+        dsp.AddTransient<IVessel, Vessel>();
+        dsp.Commit();
+
+        TypesForest tf = new(dsp);
+
+        DtoBuilder dtoBuilder = new(tf);
+
+        Trace.WriteLine(dtoBuilder.GenerateHandlerSkeleton<IShipCallForListing>());
     }
 
 }

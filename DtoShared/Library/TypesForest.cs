@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using Microsoft.Extensions.DependencyInjection;
+using System.Reflection;
 
 namespace Net.Leksi.Dto;
 
@@ -20,7 +21,8 @@ public class TypesForest
             {
                 return 1;
             }
-            return string.Compare(x.PropertyName, y.PropertyName);
+            //return string.Compare(x.PropertyName, y.PropertyName);
+            return string.Compare(x.SourcePropertyInfo.Name, y.SourcePropertyInfo.Name);
         }
     }
 
@@ -52,7 +54,7 @@ public class TypesForest
     {
         if (typeNode?.ChildNodes is { } children)
         {
-            return children.Find(propertyNode => propertyNode.PropertyName == propertyName);
+            return children.Find(propertyNode => propertyNode.SourcePropertyInfo.Name == propertyName);
         }
         return null;
     }
@@ -100,7 +102,7 @@ public class TypesForest
                                 {
                                     var newPropertyNode = new PropertyNode
                                     {
-                                        PropertyName = propertyInfo.Name,
+                                        SourcePropertyInfo = propertyInfo,
                                         PropertyInfo = propertyInfo,
                                         TypeNode = new TypeNode { Type = propertyInfo.PropertyType }
                                     };
@@ -133,7 +135,7 @@ public class TypesForest
                                     }
                                     if (actualProperty is { } && actualProperty.CanWrite)
                                     {
-                                        if (typeNode.ChildNodes.Where(ch => ch.PropertyName.Equals(propertyInfo.Name.Substring(propertyInfo.Name.LastIndexOf(Dot) + 1)))
+                                        if (typeNode.ChildNodes.Where(ch => ch.SourcePropertyInfo.Name.Equals(propertyInfo.Name.Substring(propertyInfo.Name.LastIndexOf(Dot) + 1)))
                                             .FirstOrDefault() is PropertyNode node)
                                         {
                                             node.PropertyInfo = actualProperty;
@@ -143,7 +145,7 @@ public class TypesForest
                             }
                             else
                             {
-                                if (children.Where(ch => ch.PropertyName.Equals(propertyInfo.Name))
+                                if (children.Where(ch => ch.SourcePropertyInfo.Name.Equals(propertyInfo.Name))
                                     .FirstOrDefault() is PropertyNode node)
                                 {
                                     node.PropertyInfo = propertyInfo;
@@ -159,41 +161,88 @@ public class TypesForest
         return result;
     }
 
-    private void FillChildren(List<PropertyNode> childNodes, Type type, List<Type> antiLoop)
+    public void Copy(Type sourceType, object source, object target)
     {
-        foreach (PropertyInfo propertyInfo in type.GetProperties())
+        TypeNode typeNode = GetTypeNode(sourceType);
+        ConfirmTypeNode(typeNode, target.GetType());
+        foreach(PropertyNode propertyNode in typeNode.ChildNodes)
         {
-            if (antiLoop.Contains(propertyInfo.PropertyType))
-            {
-                throw new Exception($"Loop detected: {string.Join(Slash, antiLoop.Select(t => t.Name))}/{propertyInfo.PropertyType.Name}");
-            }
-            TypeNode typeNode;
-            bool foundTypeNode = TypeTrees.ContainsKey(propertyInfo.PropertyType);
-            if(!foundTypeNode)
-            {
-                typeNode = new TypeNode { Type = propertyInfo.PropertyType };
-                TypeTrees[propertyInfo.PropertyType] = typeNode;
+            object? sourceValue = propertyNode.SourcePropertyInfo.GetValue(source);
+            if (sourceValue is null) {
+                propertyNode.PropertyInfo.SetValue(target, null);
             }
             else
             {
-                typeNode = TypeTrees[propertyInfo.PropertyType];
-            }
-            PropertyNode node = new PropertyNode
-            {
-                PropertyName = propertyInfo.Name,
-                TypeNode = typeNode,
-                IsNullable = propertyInfo.GetCustomAttributes().Any(a => a.GetType().Name.Contains(_nullableAttributeName))
-            };
-            childNodes.Add(node);
-            if (!foundTypeNode)
-            {
-                antiLoop.Add(propertyInfo.PropertyType);
-                if (ServiceProvider.IsRegistered(propertyInfo.PropertyType))
+                if(propertyNode.TypeNode.ChildNodes is { } children)
                 {
-                    node.TypeNode.ChildNodes = new List<PropertyNode>();
-                    FillChildren(node.TypeNode.ChildNodes, propertyInfo.PropertyType, antiLoop);
+                    object? targetValue = propertyNode.PropertyInfo.GetValue(target);
+                    if (targetValue is null)
+                    {
+                        targetValue = ServiceProvider.GetRequiredService(propertyNode.TypeNode.Type);
+                        propertyNode.PropertyInfo.SetValue(target, targetValue);
+                    }
+                    Copy(propertyNode.TypeNode.Type, sourceValue, targetValue);
                 }
-                antiLoop.RemoveAt(antiLoop.Count - 1);
+                else
+                {
+                    propertyNode.PropertyInfo.SetValue(target, sourceValue);
+                }
+            }
+
+        }
+    }
+
+    private void FillChildren(List<PropertyNode> childNodes, Type type, List<Type> antiLoop)
+    {
+        Queue<Type> queue = new();
+        List<Type> considered = new();
+        queue.Enqueue(type);
+        while(queue.Count > 0)
+        {
+            Type subType = queue.Dequeue();
+            foreach(Type subInterface in subType.GetInterfaces())
+            {
+                if (!considered.Contains(subInterface))
+                {
+                    queue.Enqueue(subInterface);
+                }
+                considered.Add(subInterface);
+            }
+            foreach (PropertyInfo propertyInfo in subType.GetProperties())
+            {
+                if (antiLoop.Contains(propertyInfo.PropertyType))
+                {
+                    throw new Exception($"Loop detected: {string.Join(Slash, antiLoop.Select(t => t.Name))}/{propertyInfo.PropertyType.Name}");
+                }
+                TypeNode typeNode;
+                bool foundTypeNode = TypeTrees.ContainsKey(propertyInfo.PropertyType);
+                if (!foundTypeNode)
+                {
+                    typeNode = new TypeNode { Type = propertyInfo.PropertyType };
+                    TypeTrees[propertyInfo.PropertyType] = typeNode;
+                }
+                else
+                {
+                    typeNode = TypeTrees[propertyInfo.PropertyType];
+                }
+                PropertyNode node = new PropertyNode
+                {
+                    //PropertyName = propertyInfo.Name,
+                    SourcePropertyInfo = propertyInfo,
+                    TypeNode = typeNode,
+                    IsNullable = propertyInfo.GetCustomAttributes().Any(a => a.GetType().Name.Contains(_nullableAttributeName))
+                };
+                childNodes.Add(node);
+                if (!foundTypeNode)
+                {
+                    antiLoop.Add(propertyInfo.PropertyType);
+                    if (ServiceProvider.IsRegistered(propertyInfo.PropertyType))
+                    {
+                        node.TypeNode.ChildNodes = new List<PropertyNode>();
+                        FillChildren(node.TypeNode.ChildNodes, propertyInfo.PropertyType, antiLoop);
+                    }
+                    antiLoop.RemoveAt(antiLoop.Count - 1);
+                }
             }
         }
     }

@@ -6,10 +6,8 @@ namespace Net.Leksi.Dto;
 public class DtoServiceProvider : IServiceProvider, IServiceCollection
 {
     private List<ServiceDescriptor> _serviceDescriptors = new();
-    private IServiceCollection? _services = null;
-    private IServiceProvider? _serviceProvider = null;
     private bool _commited = false;
-    private bool _isGlobal = false;
+
     public ServiceDescriptor this[int index]
     {
         get
@@ -21,6 +19,8 @@ public class DtoServiceProvider : IServiceProvider, IServiceCollection
             _serviceDescriptors[index] = value;
         }
     }
+
+    public IServiceProvider? ServiceProvider { get; set; }
 
     public void Commit()
     {
@@ -35,21 +35,18 @@ public class DtoServiceProvider : IServiceProvider, IServiceCollection
     public static void Install(IServiceCollection services, Action<IServiceCollection> configure)
     {
         DtoServiceProvider instance = new(null);
-        instance._isGlobal = true;
-        instance._services = services;
-        services.AddSingleton<DtoServiceProvider>(serviceProvider => 
+        services.AddSingleton<DtoServiceProvider>(serviceProvider =>
         {
-            instance._serviceProvider = serviceProvider;
+            instance.ServiceProvider = serviceProvider;
             return instance;
         });
         configure?.Invoke(instance);
-        instance._services = null;
         instance.Commit();
     }
 
     public DtoServiceProvider(IServiceProvider? serviceProvider)
     {
-        _serviceProvider = serviceProvider;
+        ServiceProvider = serviceProvider;
     }
 
     public bool IsRegistered<T>() where T : class
@@ -67,26 +64,26 @@ public class DtoServiceProvider : IServiceProvider, IServiceCollection
     {
         CheckCommited();
         ServiceDescriptor item = _serviceDescriptors.Where(item => item.ServiceType == serviceType).FirstOrDefault();
-        if(item is { })
+        if (item is { })
         {
-            return _isGlobal ? _serviceProvider.GetService(serviceType) : InstantiateService(item);
+            return InstantiateService(item);
         }
         return null;
     }
 
     private object InstantiateService(ServiceDescriptor item)
     {
-        if(item.ImplementationFactory is Func<IServiceProvider, object> implementation)
+        if (item.ImplementationFactory is Func<IServiceProvider, object> implementation)
         {
-            return implementation.Invoke(_serviceProvider);
+            return implementation.Invoke(ServiceProvider);
         }
         try
         {
             return Activator.CreateInstance(item.ImplementationType);
         }
-        catch(MissingMethodException ex)
+        catch (MissingMethodException ex)
         {
-            return _serviceProvider.GetService(item.ServiceType);
+            return ServiceProvider.GetService(item.ServiceType);
         }
     }
 
@@ -98,7 +95,6 @@ public class DtoServiceProvider : IServiceProvider, IServiceCollection
             throw new InvalidOperationException($"{item.Lifetime} {item.ServiceType}");
         }
         _serviceDescriptors.Add(item);
-        _services?.Add(item);
     }
 
     public void Clear()

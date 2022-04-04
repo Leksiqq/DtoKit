@@ -9,6 +9,9 @@ public class ValueRequestEventArgs : EventArgs
     private object _target;
     private ValueRequestKind _kind;
     private bool _isReset = false;
+
+    internal object SuggestedValue { get; set; }
+
     internal bool IsReset => _isReset;
 
     public object Value
@@ -43,6 +46,7 @@ public class ValueRequestEventArgs : EventArgs
         }
     }
     public string Path => _path;
+    public PropertyInfo PropertyInfo => _propertyInfo;
 
     public ValueRequestKind Kind => _kind;
 

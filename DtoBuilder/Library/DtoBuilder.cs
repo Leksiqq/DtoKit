@@ -121,7 +121,7 @@ public class DtoBuilder {
             object[]? key = null;
             foreach (PropertyNode child in children)
             {
-                _paths.Add(child.PropertyName);
+                _paths.Add(child.SourcePropertyInfo.Name);
                 if (child.TypeNode.ChildNodes is null)
                 {
                     eventArgs.Init(child.PropertyInfo, target, $"{Slash}{string.Join(Slash, _paths)}", ValueRequestKind.Terminal);
@@ -140,7 +140,7 @@ public class DtoBuilder {
                 childPosition++;
                 if(childPosition == propertyNode.TypeNode.KeysCount)
                 {
-                    key = children.Take(propertyNode.TypeNode.KeysCount).Select(v => v.PropertyInfo.GetValue(target)).ToArray();
+                    key = propertyNode.TypeNode.GetKey(target);
                     if(_objectCache.TryGet(propertyNode.TypeNode.Type, key, out object cachedObject))
                     {
                         if (!_probeObjects.TryAdd(propertyNode.TypeNode.Type, target))

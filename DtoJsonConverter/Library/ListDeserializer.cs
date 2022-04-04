@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -21,15 +22,20 @@ namespace Net.Leksi.Dto;
 /// </para>
 /// </summary>
 /// <typeparam name="T"></typeparam>
-internal class ListDeserializer<T> : JsonConverter<ListStub<T>>
+internal class ListDeserializer<T> : JsonConverter<ListStub<T>> where T : class
 {
     private readonly DtoJsonConverterFactory _factory;
-    private readonly bool _appendable;
+    private readonly ListStubKind _kind;
+    private KeyComparer? _keyComparer = null;
+    private Dictionary<int, object[]>? _keysMap = null;
+    private TypeNode? _typeNode = null;
+    private ObjectCache? _objectCache = null;
 
-    public ListDeserializer(DtoJsonConverterFactory factory, bool appendable)
+
+    public ListDeserializer(DtoJsonConverterFactory factory, ListStubKind kind)
     {
         _factory = factory;
-        _appendable = appendable;
+        _kind = kind;
     }
 
     /// <inheritdoc cref="JsonConverter{T}.Read(ref Utf8JsonReader, Type, JsonSerializerOptions)"/>
@@ -55,6 +61,14 @@ internal class ListDeserializer<T> : JsonConverter<ListStub<T>>
     public override ListStub<T>? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         IList? result = null;
+        T? updateableProbe = null;
+        if(_kind is ListStubKind.Updateable)
+        {
+            _keyComparer = new KeyComparer();
+            _keysMap = new Dictionary<int, object[]>();
+            _typeNode = _factory.TypesForest.GetTypeNode(typeof(T));
+            _objectCache = new ObjectCache();
+        }
         if (_factory.Target is null || !typeof(IList).IsAssignableFrom(_factory.Target.GetType()) || reader.TokenType != JsonTokenType.StartArray)
         {
             throw new JsonException();
@@ -62,7 +76,7 @@ internal class ListDeserializer<T> : JsonConverter<ListStub<T>>
         _factory.IsEndOfData = false;
         result = (IList)_factory.Target;
         _factory.Target = null;
-        int i = _appendable ? result.Count : 0;
+        int i = _kind is ListStubKind.Appendable ? result.Count : 0;
         for (; reader.Read() && reader.TokenType != JsonTokenType.EndArray; i++)
         {
             if (_factory.IsEndOfData)
@@ -72,14 +86,24 @@ internal class ListDeserializer<T> : JsonConverter<ListStub<T>>
             bool hasElement = i < result.Count;
             if (_factory.TypesForest.ServiceProvider.Select(sd => sd.ServiceType).Any(type => type.IsAssignableFrom(typeof(T))))
             {
-                if (hasElement)
+                if(_kind is not ListStubKind.Updateable)
                 {
-                    _factory.Target = result[i];
+                    if (hasElement)
+                    {
+                        _factory.Target = result[i];
+                    }
+                    else if (_factory.ObjectsPool.TryGetValue(typeof(T), out List<object> pool) && pool.Count > 0)
+                    {
+                        _factory.Target = pool[0];
+                        pool.RemoveAt(0);
+                    }
                 }
-                else if (_factory.ObjectsPool.TryGetValue(typeof(T), out List<object> pool) && pool.Count > 0)
+                else
                 {
-                    _factory.Target = pool[0];
-                    pool.RemoveAt(0);
+                    if(updateableProbe is { })
+                    {
+                        _factory.Target = updateableProbe;
+                    }
                 }
             }
             T? value = JsonSerializer.Deserialize<T>(ref reader, options);
@@ -89,30 +113,45 @@ internal class ListDeserializer<T> : JsonConverter<ListStub<T>>
             }
             else
             {
-                if (!hasElement || !object.ReferenceEquals(value, result[i]))
+                if(_kind is ListStubKind.Updateable)
                 {
-                    if (i < result.Count)
+                    updateableProbe = value;
+                    UpdateElement(result, updateableProbe);
+                }
+                else
+                {
+                    if (!hasElement || !object.ReferenceEquals(value, result[i]))
                     {
-                        result[i] = value;
-                    }
-                    else
-                    {
-                        result.Add(value);
+                        if (i < result.Count)
+                        {
+                            result[i] = value;
+                        }
+                        else
+                        {
+                            result.Add(value);
+                        }
                     }
                 }
             }
         }
-        if (i < result.Count && !_factory.ObjectsPool.ContainsKey(typeof(T)))
+        if(_kind is not ListStubKind.Updateable)
         {
-            _factory.ObjectsPool[typeof(T)] = new List<object>();
+            if (i < result.Count && !_factory.ObjectsPool.ContainsKey(typeof(T)))
+            {
+                _factory.ObjectsPool[typeof(T)] = new List<object>();
+            }
+            while (i < result.Count)
+            {
+                _factory.ObjectsPool[typeof(T)].Add(result[i]);
+                result.RemoveAt(i);
+            }
         }
-        while (i < result.Count)
-        {
-            _factory.ObjectsPool[typeof(T)].Add(result[i]);
-            result.RemoveAt(i);
-        }
-        return _appendable ? AppendableListStub<T>.Instance : RewritableListStub<T>.Instance;
+        return _kind switch { 
+            ListStubKind.Appendable => AppendableListStub<T>.Instance, 
+            ListStubKind.Rewriteable => RewritableListStub<T>.Instance, 
+            _ => UpdateableListStub<T>.Instance };
     }
+
     /// <summary>
     /// <para xml:lang="ru">
     /// Данный конвертер не предназначен для сериализации
@@ -126,4 +165,19 @@ internal class ListDeserializer<T> : JsonConverter<ListStub<T>>
     {
         throw new NotImplementedException();
     }
+
+    private void UpdateElement(IList result, T? updateableProbe)
+    {
+        object[] key = _typeNode.GetKey(updateableProbe);
+        for(int i = _objectCache.Count; i < result.Count; i++)
+        {
+            object[] itemKey = _typeNode.GetKey(result[i]);
+            _objectCache.Add(typeof(T), itemKey, result[i]);
+        }
+        if(_objectCache.TryGet(typeof(T), key, out object item))
+        {
+            _factory.TypesForest.Copy(typeof(T), updateableProbe, item);
+        }
+    }
+
 }
