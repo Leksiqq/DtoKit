@@ -2,18 +2,20 @@
 
 namespace Net.Leksi.Dto;
 
-public class DtoBuilder { 
-    
+public class DtoBuilder
+{
+
     public event ValueRequestEventHandler ValueRequest;
 
     private const string Slash = "/";
     private const string IDontKnowWhy = "Какая-то неведомая фигня";
 
     private readonly TypesForest _typesForest;
-    private readonly List<string> _paths = new();
+    //private readonly List<string> _paths = new();
     private readonly List<string> _ignoredPaths = new();
     private readonly ObjectCache _objectCache = new();
     private readonly Dictionary<Type, object> _probeObjects = new();
+    private readonly StringBuilder _path = new();
 
     public object? Target { get; set; } = null;
 
@@ -31,8 +33,10 @@ public class DtoBuilder {
         }
         _typesForest.PlantTypeTree(typeof(T));
         _ignoredPaths.Clear();
+        _path.Length = 0;
+        _path.Append(Slash);
         T result = (T)Build(new PropertyNode { TypeNode = _typesForest.GetTypeNode(typeof(T)) }, Target);
-        if(_ignoredPaths.Count > 0)
+        if (_ignoredPaths.Count > 0)
         {
             throw new InvalidOperationException($"path(s) ignored:\n{string.Join("\n", _ignoredPaths)}");
 
@@ -85,7 +89,7 @@ public class DtoBuilder {
         ValueRequestEventArgs eventArgs = new();
         if (target is null)
         {
-            if(_probeObjects.TryGetValue(propertyNode.TypeNode.Type, out object probe))
+            if (_probeObjects.TryGetValue(propertyNode.TypeNode.Type, out object probe))
             {
                 _probeObjects.Remove(propertyNode.TypeNode.Type);
                 target = probe;
@@ -95,16 +99,17 @@ public class DtoBuilder {
                 target = _typesForest.ServiceProvider.GetService(propertyNode.TypeNode.Type);
             }
         }
-        ValueRequestKind valueRequestKind = 
-            propertyNode.IsNullable 
-                ? ValueRequestKind.NullableNode 
+        ValueRequestKind valueRequestKind =
+            propertyNode.IsNullable
+                ? ValueRequestKind.NullableNode
                 : ValueRequestKind.NotNullableNode
             ;
-        eventArgs.Init(null, target, $"{Slash}{string.Join(Slash, _paths)}", valueRequestKind);
+        eventArgs.Init(null, target, _path.ToString(), valueRequestKind);
+        //eventArgs.Init(null, target, $"{Slash}{string.Join(Slash, _paths)}", valueRequestKind);
         ValueRequest!.Invoke(eventArgs);
         if (eventArgs.IsReset)
         {
-            if(!_probeObjects.TryAdd(propertyNode.TypeNode.Type, target))
+            if (!_probeObjects.TryAdd(propertyNode.TypeNode.Type, target))
             {
                 throw new Exception(IDontKnowWhy);
             }
@@ -114,17 +119,24 @@ public class DtoBuilder {
         {
             return target;
         }
-        if(propertyNode.TypeNode.ChildNodes is { } children)
+        if (propertyNode.TypeNode.ChildNodes is { } children)
         {
             _typesForest.ConfirmTypeNode(propertyNode.TypeNode, target.GetType());
             int childPosition = 0;
             object[]? key = null;
             foreach (PropertyNode child in children)
             {
-                _paths.Add(child.SourcePropertyInfo.Name);
+                int pathLength = _path.Length;
+                if (pathLength > 1)
+                {
+                    _path.Append(Slash);
+                }
+                _path.Append(child.SourcePropertyInfo.Name);
+                //_paths.Add(child.SourcePropertyInfo.Name);
                 if (child.TypeNode.ChildNodes is null)
                 {
-                    eventArgs.Init(child.PropertyInfo, target, $"{Slash}{string.Join(Slash, _paths)}", ValueRequestKind.Terminal);
+                    eventArgs.Init(child.PropertyInfo, target, _path.ToString(), ValueRequestKind.Terminal);
+                    //eventArgs.Init(child.PropertyInfo, target, $"{Slash}{string.Join(Slash, _paths)}", ValueRequestKind.Terminal);
                     ValueRequest!.Invoke(eventArgs);
                     if (!eventArgs.IsCommited)
                     {
@@ -136,12 +148,13 @@ public class DtoBuilder {
                     object result = Build(child, child.PropertyInfo.GetValue(target));
                     child.PropertyInfo.SetValue(target, result);
                 }
-                _paths.RemoveAt(_paths.Count - 1);
+                _path.Length = pathLength;
+                //_paths.RemoveAt(_paths.Count - 1);
                 childPosition++;
-                if(childPosition == propertyNode.TypeNode.KeysCount)
+                if (childPosition == propertyNode.TypeNode.KeysCount)
                 {
                     key = propertyNode.TypeNode.GetKey(target);
-                    if(_objectCache.TryGet(propertyNode.TypeNode.Type, key, out object cachedObject))
+                    if (_objectCache.TryGet(propertyNode.TypeNode.Type, key, out object cachedObject))
                     {
                         if (!_probeObjects.TryAdd(propertyNode.TypeNode.Type, target))
                         {
@@ -153,7 +166,7 @@ public class DtoBuilder {
                     }
                 }
             }
-            if(key is { })
+            if (key is { })
             {
                 _objectCache.Add(propertyNode.TypeNode.Type, key, target);
             }
