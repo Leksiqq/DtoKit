@@ -7,7 +7,6 @@ public class DtoServiceProvider : IServiceProvider, IServiceCollection
 {
     private List<ServiceDescriptor> _serviceDescriptors = new();
     private IServiceCollection? _services = null;
-    private bool _commited = false;
 
     public ServiceDescriptor this[int index]
     {
@@ -23,15 +22,9 @@ public class DtoServiceProvider : IServiceProvider, IServiceCollection
 
     public IServiceProvider? ServiceProvider { get; set; }
 
-    public void Commit()
-    {
-        CheckNotCommited();
-        _commited = true;
-    }
+    public int Count => throw new InvalidOperationException();
 
-    public int Count => _serviceDescriptors.Count;
-
-    public bool IsReadOnly => ((ICollection<ServiceDescriptor>)_serviceDescriptors).IsReadOnly;
+    public bool IsReadOnly => throw new InvalidOperationException();
 
     public static void Install(IServiceCollection services, Action<IServiceCollection> configure)
     {
@@ -44,7 +37,6 @@ public class DtoServiceProvider : IServiceProvider, IServiceCollection
         instance._services = services;
         configure?.Invoke(instance);
         instance._services = null;
-        instance.Commit();
     }
 
     public DtoServiceProvider(IServiceProvider? serviceProvider)
@@ -59,13 +51,11 @@ public class DtoServiceProvider : IServiceProvider, IServiceCollection
 
     public bool IsRegistered(Type serviceType)
     {
-        CheckCommited();
         return _serviceDescriptors.Any(item => item.ServiceType == serviceType);
     }
 
     public object? GetService(Type serviceType)
     {
-        CheckCommited();
         ServiceDescriptor item = _serviceDescriptors.Where(item => item.ServiceType == serviceType).FirstOrDefault();
         if (item is { })
         {
@@ -92,10 +82,13 @@ public class DtoServiceProvider : IServiceProvider, IServiceCollection
 
     public void Add(ServiceDescriptor item)
     {
-        CheckNotCommited();
+        if (!item.ServiceType.IsInterface)
+        {
+            throw new ArgumentException($"{item.ServiceType} is not an interface");
+        }
         if (item.Lifetime is not ServiceLifetime.Transient)
         {
-            throw new InvalidOperationException($"{item.Lifetime} {item.ServiceType}");
+            throw new InvalidOperationException($"{item.Lifetime} must be {ServiceLifetime.Transient} for {item.ServiceType}");
         }
         _serviceDescriptors.Add(item);
         _services?.Add(item);
@@ -103,18 +96,17 @@ public class DtoServiceProvider : IServiceProvider, IServiceCollection
 
     public void Clear()
     {
-        CheckNotCommited();
-        _serviceDescriptors.Clear();
+        throw new InvalidOperationException();
     }
 
     public bool Contains(ServiceDescriptor item)
     {
-        return _serviceDescriptors.Contains(item);
+        throw new InvalidOperationException();
     }
 
     public void CopyTo(ServiceDescriptor[] array, int arrayIndex)
     {
-        _serviceDescriptors.CopyTo(array, arrayIndex);
+        throw new InvalidOperationException();
     }
 
     public IEnumerator<ServiceDescriptor> GetEnumerator()
@@ -129,39 +121,22 @@ public class DtoServiceProvider : IServiceProvider, IServiceCollection
 
     public int IndexOf(ServiceDescriptor item)
     {
-        return _serviceDescriptors.IndexOf(item);
+        throw new InvalidOperationException();
     }
 
     public void Insert(int index, ServiceDescriptor item)
     {
-        CheckNotCommited();
-        _serviceDescriptors.Insert(index, item);
+        throw new InvalidOperationException();
     }
 
     public bool Remove(ServiceDescriptor item)
     {
-        CheckNotCommited();
-        return _serviceDescriptors.Remove(item);
+        throw new InvalidOperationException();
     }
 
     public void RemoveAt(int index)
     {
-        CheckNotCommited();
-        _serviceDescriptors.RemoveAt(index);
+        throw new InvalidOperationException();
     }
 
-    private void CheckNotCommited()
-    {
-        if (_commited)
-        {
-            throw new InvalidOperationException("Already commited");
-        }
-    }
-    private void CheckCommited()
-    {
-        if (!_commited)
-        {
-            throw new InvalidOperationException("Must be commited");
-        }
-    }
 }

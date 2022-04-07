@@ -5,6 +5,7 @@ using NUnit.Framework;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text.Json;
 using TestProject1.Dto1;
 
 namespace TestProject1;
@@ -42,7 +43,7 @@ public class DtoBuilderUnitTest
         Trace.Flush();
     }
 
-    [SetUp]
+    [NUnit.Framework.SetUp]
     public void Setup()
     {
         host.RunAsync();
@@ -183,6 +184,55 @@ public class DtoBuilderUnitTest
         DtoBuilder dtoBuilder = host.Services.GetRequiredService<DtoBuilder>();
 
         Trace.WriteLine(dtoBuilder.GenerateHandlerSkeleton<IVessel>());
+    }
+
+
+    internal class Helper1
+    {
+
+        [Path("/", typeof(NodeSetter))]
+        object Apache(object value, bool isNullable, ref bool isCommited)
+        {
+            //isCommited = true;
+            return new Line {ID_LINE = "NTL", Name = "NTL" };
+        }
+        object Nginx(object value)
+        {
+            return "1";
+        }
+        [Path("/ID_LINE", typeof(TerminalSetter))]
+        [Path("/Name", typeof(TerminalSetter))]
+        object Netscape(object value)
+        {
+            return "TRE";
+        }
+
+        [Net.Leksi.Dto.Setup]
+        void Setup()
+        {
+            Trace.WriteLine("Setup");
+        }
+        [Shutdown]
+        void Shutdown()
+        {
+            Trace.WriteLine("Shutdown");
+        }
+    }
+
+    [Test]
+    public void Test5()
+    {
+        DtoBuilder dtoBuilder = host.Services.GetRequiredService<DtoBuilder>();
+        DtoJsonConverterFactory converter = host.Services.GetRequiredService<DtoJsonConverterFactory>();
+        JsonSerializerOptions options = new JsonSerializerOptions { };
+        options.Converters.Add(converter);
+
+        ILine line = dtoBuilder.Build<ILine>(new Helper1());
+
+        Trace.WriteLine(line.ShortName);
+
+        Trace.WriteLine(JsonSerializer.Serialize(line, options));
+
     }
 
     [Test]

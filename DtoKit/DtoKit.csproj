@@ -6,7 +6,7 @@
 		<Nullable>enable</Nullable>
 		<RootNamespace>Net.Leksi.Dto</RootNamespace>
 		<Copyright>2022-04-06</Copyright>
-		<VersionPrefix>0.0.0</VersionPrefix>
+		<VersionPrefix>1.1.0</VersionPrefix>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<Description>
@@ -17,11 +17,12 @@
 		<Authors>Alexey leksiq Zakharov</Authors>
 		<RepositoryUrl>https://sourceforge.net/p/dtokit/code</RepositoryUrl>
 		<PackageTags>JSON;ASP.NET</PackageTags>
+		<OutputType>Library</OutputType>
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="Net.Leksi.DtoBuilder" Version="1.0.0" />
-	  <PackageReference Include="Net.Leksi.DtoJsonConverter" Version="1.0.0" />
+	  <PackageReference Include="Net.Leksi.DtoBuilder" Version="1.1.0" />
+	  <PackageReference Include="Net.Leksi.DtoJsonConverter" Version="1.1.0" />
 	</ItemGroup>
 
 </Project>

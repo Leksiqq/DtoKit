@@ -1,18 +1,22 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using System.Reflection;
 using System.Text;
 
 namespace Net.Leksi.Dto;
 
 public class DtoBuilder
 {
-
     public event ValueRequestEventHandler ValueRequest;
 
     private const string IDontKnowWhy = "Какая-то неведомая фигня";
+    private const string SetUp = nameof(SetUp);
+    private const string ShutDown = nameof(ShutDown);
 
     private readonly TypesForest _typesForest;
     private readonly ObjectCache _objectCache = new();
     private readonly Dictionary<Type, object> _probeObjects = new();
+    private readonly Dictionary<Type, Dictionary<string, MethodInfo>> _helperMethods = new();
+    private readonly Dictionary<object, ValueRequestEventHandler> _helperHandlers = new();
 
     public object? Target { get; set; } = null;
 
@@ -20,6 +24,30 @@ public class DtoBuilder
     {
         _typesForest = typesForest ?? throw new ArgumentNullException(nameof(typesForest));
 
+    }
+
+    public T Build<T>(object helper) where T : class
+    {
+        if(helper is null)
+        {
+            throw new ArgumentNullException();
+        }
+        if (!_helperHandlers.ContainsKey(helper))
+        {
+            SaveHelper(helper);
+        }
+        if(_helperMethods[helper.GetType()].TryGetValue(SetUp, out MethodInfo setup))
+        {
+            setup.Invoke(helper, null);
+        }
+        ValueRequest += _helperHandlers[helper];
+        T result = Build<T>();
+        ValueRequest -= _helperHandlers[helper];
+        if (_helperMethods[helper.GetType()].TryGetValue(ShutDown, out MethodInfo shutdown))
+        {
+            shutdown.Invoke(helper, null);
+        }
+        return result;
     }
 
     public T Build<T>() where T : class
@@ -74,15 +102,21 @@ public class DtoBuilder
                     if (eventArgs.IsReset)
                     {
                         targets.Pop();
-                        skipTo = targets.Count;
-                        request.PropertyNode.PropertyInfo.SetValue(targets.Peek(), null);
-                        targets.Push(null);
+                        if(targets.Count > 0)
+                        {
+                            request.PropertyNode.PropertyInfo.SetValue(targets.Peek(), eventArgs.Result);
+                        }
+                        else
+                        {
+                            result = (T)eventArgs.Result;
+                        }
+                        targets.Push(eventArgs.Result);
                         if (!_probeObjects.TryAdd(request.PropertyNode.TypeNode.Type, target))
                         {
                             throw new Exception(IDontKnowWhy);
                         }
                     }
-                    else if (eventArgs.IsCommited)
+                    if (eventArgs.IsCommited)
                     {
                         skipTo = targets.Count - 1;
                     }
@@ -173,4 +207,96 @@ public class DtoBuilder
         return sb.ToString();
     }
 
+    private void SaveHelper(object helper)
+    {
+        if (!_helperMethods.ContainsKey(helper.GetType()))
+        {
+            SaveHelperMethods(helper.GetType());
+        }
+        Dictionary<string, MethodInfo> methods = _helperMethods[helper.GetType()];
+        object?[] parameters3 = new object[3];
+        _helperHandlers[helper] = args =>
+        {
+            if (methods.TryGetValue(args.Path, out MethodInfo method))
+            {
+                if (args.Kind is ValueRequestKind.Terminal)
+                {
+                    object?[] parameters = new object[1];
+                    parameters[0] = args.Value;
+                    args.Value = method.Invoke(helper, parameters);
+                    args.Commit();
+                }
+                else {
+                    object?[] parameters = new object[3];
+                    parameters[0] = args.Value;
+                    parameters[1] = args.Kind is ValueRequestKind.NullableNode;
+                    parameters[2] = false;
+                    args.Value = method.Invoke(helper, parameters);
+                    if ((parameters[2] is bool isCommited && isCommited))
+                    {
+                        args.Commit();
+                    }
+                }
+            }
+        };
+    }
+
+    private void SaveHelperMethods(Type type)
+    {
+        Type currentType = type;
+        _helperMethods[type] = new Dictionary<string, MethodInfo>();
+        while (currentType != typeof(object))
+        {
+            foreach(MethodInfo methodInfo in currentType.GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance))
+            {
+                if (methodInfo.GetCustomAttribute<SetupAttribute>() is SetupAttribute)
+                {
+                    if (methodInfo.ReturnType != typeof(void) || methodInfo.GetParameters().Length > 0)
+                    {
+                        throw new Exception($"{methodInfo} is not a setup void delegate()");
+                    }
+                    if (!_helperMethods[type].TryAdd(SetUp, methodInfo))
+                    {
+                        throw new Exception($"setup method is already declared");
+                    }
+                }
+                else if (methodInfo.GetCustomAttribute<ShutdownAttribute>() is ShutdownAttribute)
+                {
+                    if (methodInfo.ReturnType != typeof(void) || methodInfo.GetParameters().Length > 0)
+                    {
+                        throw new Exception($"{methodInfo} is not a shutdown void delegate()");
+                    }
+                    if (!_helperMethods[type].TryAdd(ShutDown, methodInfo))
+                    {
+                        throw new Exception($"shutdown method is already declared");
+                    }
+                }
+                else
+                {
+                    ParameterInfo[] parameters0 = methodInfo.GetParameters();
+                    foreach (PathAttribute PathAttribute in methodInfo.GetCustomAttributes<PathAttribute>())
+                    {
+                        MethodInfo method = PathAttribute.DelegateType.GetMethod("Invoke");
+                        ParameterInfo[] parameters = method.GetParameters();
+                        if (
+                            method.ReturnType != methodInfo.ReturnType
+                            || parameters0.Length != parameters.Length
+                            || !parameters0.Zip(parameters)
+                                .All(v =>
+                                    v.First.ParameterType == v.Second.ParameterType
+                                    && v.First.IsIn == v.Second.IsIn
+                                    && v.First.IsOut == v.Second.IsOut))
+                        {
+                            throw new Exception($"{methodInfo} is not a delegate {PathAttribute.DelegateType}");
+                        }
+                        if (!_helperMethods[type].TryAdd(PathAttribute.Path, methodInfo))
+                        {
+                            throw new Exception($"Path \"{PathAttribute.Path}\" method is already declared");
+                        }
+                    }
+                }
+            }
+            currentType = currentType.BaseType;
+        }
+    }
 }
