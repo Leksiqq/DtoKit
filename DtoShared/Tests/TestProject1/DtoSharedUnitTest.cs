@@ -28,38 +28,29 @@ public class DtoSharedUnitTest
     }
 
     [Test]
-    public void Test1()
+    public void Test2()
     {
-
         IHostBuilder hostBuilder = Host.CreateDefaultBuilder()
             .ConfigureServices(serviceCollection =>
             {
-                DtoServiceProvider.Install(serviceCollection, services =>
+                DtoKit.Install(serviceCollection, services =>
                 {
-                    services.AddTransient<ILine, Line>();
-                });
-                DtoServiceProvider.Install(serviceCollection, services =>
-                {
+                    services.AddTransient<IShipCall, ShipCall>();
+                    services.AddTransient<ILocation, Location>();
                     services.AddTransient<IRoute, Route>();
+                    services.AddTransient<ILine, Line>();
+                    services.AddTransient<IVessel, Vessel>();
+                    services.AddTransient<IShipCallForListing, ShipCall>();
+                    services.AddTransient<IShipCallAdditionalInfo, ShipCall>();
+                    services.AddTransient<IRouteShort, Route>();
+                    services.AddTransient<IVesselShort, Vessel>();
                 });
-            })
-            ;
+            });
         IHost host = hostBuilder.Build();
         host.RunAsync();
 
+        TypesForest tf = host.Services.GetRequiredService<TypesForest>();
 
-        foreach (DtoServiceProvider dtoSp in host.Services.GetServices<DtoServiceProvider>())
-        {
-            Trace.WriteLine(dtoSp.IsRegistered<ILine>());
-            Trace.WriteLine(dtoSp.IsRegistered<IRoute>());
-            ILine line = dtoSp.GetService<ILine>();
-            IRoute route = dtoSp.GetService<IRoute>();
-
-            Trace.WriteLine(line);
-            Trace.WriteLine(route);
-
-            Trace.WriteLine("");
-        }
-
+        tf.GetTypeNode<IRoute>();
     }
 }

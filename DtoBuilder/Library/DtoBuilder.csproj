@@ -6,17 +6,21 @@
     <Nullable>enable</Nullable>
     <RootNamespace>Net.Leksi.Dto</RootNamespace>
 	  <Copyright>2022-03-29</Copyright>
-	  <VersionPrefix>1.0.0</VersionPrefix>
+	  <VersionPrefix>0.0.0</VersionPrefix>
 	  <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
 	  <PackageLicenseExpression>MIT</PackageLicenseExpression>
 	  <Description>
 	  </Description>
 	  <GenerateDocumentationFile>True</GenerateDocumentationFile>
 	  <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+	  <PackageId>Net.Leksi.$(AssemblyName)</PackageId>
+	  <Authors>Alexey leksiq Zakharov</Authors>
+	  <RepositoryUrl>https://sourceforge.net/p/dtobuilder/code</RepositoryUrl>
+	  <PackageTags>JSON;ASP.NET</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\DtoShared\Library\DtoShared.csproj" />
+    <PackageReference Include="Net.Leksi.DtoShared" Version="1.0.3" />
   </ItemGroup>
 
 </Project>

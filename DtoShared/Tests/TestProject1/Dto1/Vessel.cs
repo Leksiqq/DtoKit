@@ -7,7 +7,7 @@ public class Vessel : IVessel, IVesselShort
     [Key]
     public string ID_VESSEL { get; set; }
 
-    public Location Port { get; set; }
+    public Location? Port { get; set; }
 
     public double Length { get; set; }
 
@@ -31,5 +31,5 @@ public class Vessel : IVessel, IVesselShort
 
     public string Name { get; set; }
 
-    ILocation IVessel.Port => Port;
+    ILocation? IVessel.Port => Port;
 }

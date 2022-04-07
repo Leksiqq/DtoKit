@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net6.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<RootNamespace>Net.Leksi.Dto</RootNamespace>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\DtoBuilder\Library\DtoBuilderDebug.csproj" />
+	  <ProjectReference Include="..\DtoJsonConverter\Library\DtoJsonConverterDebug.csproj" />
+	  <ProjectReference Include="..\DtoShared\Library\DtoSharedDebug.csproj" />
+	</ItemGroup>
+
+</Project>

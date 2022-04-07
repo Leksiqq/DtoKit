@@ -20,7 +20,7 @@ public class KeyComparer : IEqualityComparer<object>
 
     public int GetHashCode([DisallowNull] object obj)
     {
-        int result = ((object[])obj).Select(v => v is null ? 0 : v.GetHashCode()).Aggregate(0, (v, res) => unchecked(v + res));
+        int result = ((object[])obj).Select(v => v is null ? 0 : v.GetHashCode()).Aggregate(0, (v, res) => unchecked(v + res * 7));
         return result;
     }
 }

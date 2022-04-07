@@ -94,7 +94,6 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
             }
 
             Type itemType = item.GetType();
-            _factory.TypesForest.ConfirmTypeNode(typeNode, itemType);
 
             int propertyPosition = 0;
             object[]? key = null;
@@ -293,8 +292,6 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
 
             TypeNode typeNode = _factory.TypesForest.GetTypeNode(typeof(T));
 
-            _factory.TypesForest.ConfirmTypeNode(typeNode, actualType);
-
             writer.WriteStartObject();
             if (_factory.WithMagic)
             {
@@ -307,7 +304,7 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
             {
                 foreach (PropertyNode propertyNode in typeNode.ChildNodes)
                 {
-                    writer.WritePropertyName(propertyNode.SourcePropertyInfo.Name);
+                    writer.WritePropertyName(propertyNode.Name);
                     if (propertyNode.PropertyInfo!.PropertyType.IsEnum)
                     {
                         writer.WriteStringValue(propertyNode.PropertyInfo.GetValue(value)?.ToString());

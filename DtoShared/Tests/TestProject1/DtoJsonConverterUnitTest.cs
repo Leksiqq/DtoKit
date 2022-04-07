@@ -9,15 +9,35 @@ using TestProject1.Dto1;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using DeepEqual.Syntax;
+using Microsoft.Extensions.Hosting;
 
 namespace TestProject1;
 
 public class DtoJsonConverterUnitTest
 {
+    private IHost host;
+
     [OneTimeSetUp]
     public void OneTimeSetup()
     {
         Trace.Listeners.Add(new ConsoleTraceListener());
+        IHostBuilder hostBuilder = Host.CreateDefaultBuilder()
+            .ConfigureServices(serviceCollection =>
+            {
+                DtoKit.Install(serviceCollection, services =>
+                {
+                    services.AddTransient<IShipCall, ShipCall>();
+                    services.AddTransient<ILocation, Location>();
+                    services.AddTransient<IRoute, Route>();
+                    services.AddTransient<ILine, Line>();
+                    services.AddTransient<IVessel, Vessel>();
+                    services.AddTransient<IShipCallForListing, ShipCall>();
+                    services.AddTransient<IShipCallAdditionalInfo, ShipCall>();
+                    services.AddTransient<IRouteShort, Route>();
+                    services.AddTransient<IVesselShort, Vessel>();
+                });
+            });
+        host = hostBuilder.Build();
     }
 
     [OneTimeTearDown]
@@ -29,26 +49,17 @@ public class DtoJsonConverterUnitTest
     [SetUp]
     public void Setup()
     {
+        host.RunAsync();
     }
 
     [Test]
     public void Test1()
     {
-        DtoServiceProvider dsp = new(null);
-        dsp.AddTransient<IShipCall, ShipCall>();
-        dsp.AddTransient<ILocation, Location>();
-        dsp.AddTransient<IRoute, Route>();
-        dsp.AddTransient<ILine, Line>();
-        dsp.AddTransient<IVessel, Vessel>();
-        dsp.Commit();
-
-        TypesForest tf = new(dsp);
-
-        DtoBuilder dtoBuilder = new(tf);
+        DtoBuilder dtoBuilder = host.Services.GetRequiredService<DtoBuilder>();
 
         dtoBuilder.ValueRequest += args =>
         {
-            Trace.WriteLine(args.Path);
+            //Trace.WriteLine(args.Path);
             if(args.Kind is ValueRequestKind.Terminal)
             {
                 args.Commit();
@@ -57,7 +68,9 @@ public class DtoJsonConverterUnitTest
 
         IShipCall shipCall = dtoBuilder.Build<IShipCall>();
 
-        DtoJsonConverterFactory converter = new(tf) { WithMagic = true, WithKeyOnlyForRepeated = false };
+        DtoJsonConverterFactory converter = host.Services.GetRequiredService<DtoJsonConverterFactory>();
+        converter.WithMagic = true;
+        converter.WithKeyOnlyForRepeated = false;
 
         JsonSerializerOptions options = new() {WriteIndented = true };
         options.Converters.Add(converter);
@@ -74,18 +87,7 @@ public class DtoJsonConverterUnitTest
     [TestCase(false, false)]
     public void Test3(bool withMagic, bool withKeyOnly)
     {
-        DtoServiceProvider dsp = new(null);
-        dsp.AddTransient<IShipCallForListing, ShipCall>();
-        dsp.AddTransient<IShipCallAdditionalInfo, ShipCall>();
-        dsp.AddTransient<ILocation, Location>();
-        dsp.AddTransient<IRouteShort, Route>();
-        dsp.AddTransient<ILine, Line>();
-        dsp.AddTransient<IVesselShort, Vessel>();
-        dsp.Commit();
-
-        TypesForest tf = new(dsp);
-
-        DtoBuilder dtoBuilder = new(tf);
+        DtoBuilder dtoBuilder = host.Services.GetRequiredService<DtoBuilder>();
 
         int i = 1;
 
@@ -101,27 +103,27 @@ public class DtoJsonConverterUnitTest
                     args.Value = i;
                     args.Commit();
                     break;
-                case "/Route/ID_LINE":
+                case "/RouteImpl/ID_LINE":
                     args.Value = "TRE";
                     args.Commit();
                     break;
-                case "/Route/ID_RHEAD":
+                case "/RouteImpl/ID_RHEAD":
                     args.Value = 1;
                     args.Commit();
                     break;
-                case "/Route/Line/ID_LINE":
+                case "/RouteImpl/Line/ID_LINE":
                     args.Value = "TRE";
                     args.Commit();
                     break;
-                case "/Route/Line/Name":
+                case "/RouteImpl/Line/Name":
                     args.Value = "TRE";
                     args.Commit();
                     break;
-                case "/Route/Vessel/ID_VESSEL":
+                case "/RouteImpl/Vessel/ID_VESSEL":
                     args.Value = "VARYAG";
                     args.Commit();
                     break;
-                case "/Route/Vessel/Name":
+                case "/RouteImpl/Vessel/Name":
                     args.Value = "VARYAG";
                     args.Commit();
                     break;
@@ -174,7 +176,9 @@ public class DtoJsonConverterUnitTest
             shipCalls.Add(dtoBuilder.Build<IShipCallForListing>());
         }
 
-        DtoJsonConverterFactory converter = new(tf) { WithMagic = withMagic, WithKeyOnlyForRepeated = withKeyOnly };
+        DtoJsonConverterFactory converter = host.Services.GetRequiredService<DtoJsonConverterFactory>();
+        converter.WithMagic = withMagic;
+        converter.WithKeyOnlyForRepeated = withKeyOnly;
         var options = new JsonSerializerOptions { WriteIndented = true };
         options.Converters.Add(converter);
 
@@ -182,7 +186,10 @@ public class DtoJsonConverterUnitTest
 
         Console.WriteLine(json);
 
-        converter = new(tf) { WithMagic = withMagic, WithKeyOnlyForRepeated = false };
+        converter = converter = host.Services.GetRequiredService<DtoJsonConverterFactory>();
+        converter.WithMagic = withMagic;
+        converter.WithKeyOnlyForRepeated = false;
+
         options = new JsonSerializerOptions { WriteIndented = true };
         options.Converters.Add(converter);
 
@@ -192,7 +199,10 @@ public class DtoJsonConverterUnitTest
 
         shipCalls.ShouldDeepEqual(res);
 
-        converter = new(tf) { WithMagic = withMagic, WithKeyOnlyForRepeated = withKeyOnly };
+        converter = converter = host.Services.GetRequiredService<DtoJsonConverterFactory>();
+        converter.WithMagic = withMagic;
+        converter.WithKeyOnlyForRepeated = withKeyOnly;
+
         options = new JsonSerializerOptions { WriteIndented = true };
         options.Converters.Add(converter);
 
@@ -203,14 +213,20 @@ public class DtoJsonConverterUnitTest
             ((ShipCall)shipCall).AdditionalInfo = "Additional info";
         }
 
-        converter = new(tf) { WithMagic = withMagic, WithKeyOnlyForRepeated = withKeyOnly };
+        converter = converter = host.Services.GetRequiredService<DtoJsonConverterFactory>();
+        converter.WithMagic = withMagic;
+        converter.WithKeyOnlyForRepeated = withKeyOnly;
+
         options = new JsonSerializerOptions { WriteIndented = true };
         options.Converters.Add(converter);
 
         json = JsonSerializer.Serialize(shipCalls.Select(v => (IShipCallAdditionalInfo)v), options);
         Console.WriteLine(json);
 
-        converter = new(tf) { WithMagic = withMagic, WithKeyOnlyForRepeated = withKeyOnly };
+        converter = converter = host.Services.GetRequiredService<DtoJsonConverterFactory>();
+        converter.WithMagic = withMagic;
+        converter.WithKeyOnlyForRepeated = withKeyOnly;
+
         options = new JsonSerializerOptions { WriteIndented = true };
         options.Converters.Add(converter);
 
@@ -218,7 +234,10 @@ public class DtoJsonConverterUnitTest
         JsonSerializer.Deserialize<UpdateableListStub<IShipCallAdditionalInfo>>(json, options);
 
 
-        converter = new(tf) { WithMagic = withMagic, WithKeyOnlyForRepeated = withKeyOnly };
+        converter = converter = host.Services.GetRequiredService<DtoJsonConverterFactory>();
+        converter.WithMagic = withMagic;
+        converter.WithKeyOnlyForRepeated = withKeyOnly;
+
         options = new JsonSerializerOptions { WriteIndented = true };
         options.Converters.Add(converter);
 

@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using Microsoft.Extensions.DependencyInjection;
+using System.Text;
 
 namespace Net.Leksi.Dto;
 
@@ -7,15 +8,11 @@ public class DtoBuilder
 
     public event ValueRequestEventHandler ValueRequest;
 
-    private const string Slash = "/";
     private const string IDontKnowWhy = "Какая-то неведомая фигня";
 
     private readonly TypesForest _typesForest;
-    //private readonly List<string> _paths = new();
-    private readonly List<string> _ignoredPaths = new();
     private readonly ObjectCache _objectCache = new();
     private readonly Dictionary<Type, object> _probeObjects = new();
-    private readonly StringBuilder _path = new();
 
     public object? Target { get; set; } = null;
 
@@ -27,20 +24,112 @@ public class DtoBuilder
 
     public T Build<T>() where T : class
     {
-        if (!_typesForest.ServiceProvider.IsRegistered(typeof(T)))
+        T result = null;
+        PropertyNode root = new PropertyNode { TypeNode = _typesForest.GetTypeNode(typeof(T)) };
+        Stack<object?> targets = new();
+        Stack<TypeNode?> typeNodes = new();
+        ValueRequestEventArgs eventArgs = new();
+        List<string> ignoredPaths = new();
+        int skipTo = -1;
+        int childPosition = 0;
+        object[]? key = null;
+        foreach (ValueRequest request in root.TypeNode.ValueRequests)
         {
-            throw new ArgumentException($"{typeof(T)} is not registered.");
-        }
-        _typesForest.PlantTypeTree(typeof(T));
-        _ignoredPaths.Clear();
-        _path.Length = 0;
-        _path.Append(Slash);
-        T result = (T)Build(new PropertyNode { TypeNode = _typesForest.GetTypeNode(typeof(T)) }, Target);
-        if (_ignoredPaths.Count > 0)
-        {
-            throw new InvalidOperationException($"path(s) ignored:\n{string.Join("\n", _ignoredPaths)}");
 
+            if(skipTo < 0 || targets.Count <= skipTo)
+            {
+                skipTo = -1;
+                if (!request.PropertyNode.IsLeaf)
+                {
+                    childPosition = 0;
+                    object target = null;
+                    if (request.PropertyNode.TypeNode.Type == typeof(T))
+                    {
+                        target = Target;
+                    }
+                    if (target is null)
+                    {
+                        if (_probeObjects.TryGetValue(request.PropertyNode.TypeNode.Type, out object probe))
+                        {
+                            _probeObjects.Remove(request.PropertyNode.TypeNode.Type);
+                            target = probe;
+                        }
+                        else
+                        {
+                            target = _typesForest.ServiceProvider.GetRequiredService(request.PropertyNode.TypeNode.Type);
+                        }
+                    }
+                    if (targets.Count == 0)
+                    {
+                        result = (T)target;
+                    }
+                    else
+                    {
+                        request.PropertyNode.PropertyInfo.SetValue(targets.Peek(), target);
+                    }
+                    targets.Push(target);
+                    typeNodes.Push(request.PropertyNode.TypeNode);
+                    eventArgs.Init(request.PropertyNode, target, request.Path);
+                    ValueRequest?.Invoke(eventArgs);
+                    if (eventArgs.IsReset)
+                    {
+                        targets.Pop();
+                        skipTo = targets.Count;
+                        request.PropertyNode.PropertyInfo.SetValue(targets.Peek(), null);
+                        targets.Push(null);
+                        if (!_probeObjects.TryAdd(request.PropertyNode.TypeNode.Type, target))
+                        {
+                            throw new Exception(IDontKnowWhy);
+                        }
+                    }
+                    else if (eventArgs.IsCommited)
+                    {
+                        skipTo = targets.Count - 1;
+                    }
+                }
+                else
+                {
+                    childPosition++;
+                    eventArgs.Init(request.PropertyNode, targets.Peek(), request.Path);
+                    ValueRequest?.Invoke(eventArgs);
+                    if (!eventArgs.IsCommited)
+                    {
+                        ignoredPaths.Add(eventArgs.Path);
+                    }
+                    if(childPosition == typeNodes.Peek().KeysCount)
+                    {
+                        key = request.PropertyNode.TypeNode.GetKey(targets.Peek());
+                        if (_objectCache.TryGet(request.PropertyNode.TypeNode.Type, key, out object cachedObject))
+                        {
+                            if (!_probeObjects.TryAdd(request.PropertyNode.TypeNode.Type, targets.Peek()))
+                            {
+                                throw new Exception(IDontKnowWhy);
+                            }
+                            targets.Pop();
+                            targets.Push(cachedObject);
+                            key = null;
+                            skipTo = targets.Count - 1;
+                        }
+
+                    }
+                }
+            }
+            for (int i = request.PopsCount; i < 0; i++)
+            {
+                object? target = targets.Pop();
+                if (key is { })
+                {
+                    _objectCache.Add(typeNodes.Peek().Type, key, target);
+                    key = null;
+                }
+                typeNodes.Pop();
+            }
         }
+        if (ignoredPaths.Count > 0)
+        {
+            throw new InvalidOperationException($"path(s) ignored:\n{string.Join("\n", ignoredPaths)}");
+        }
+
         return result;
     }
 
@@ -84,94 +173,4 @@ public class DtoBuilder
         return sb.ToString();
     }
 
-    private object Build(PropertyNode propertyNode, object target)
-    {
-        ValueRequestEventArgs eventArgs = new();
-        if (target is null)
-        {
-            if (_probeObjects.TryGetValue(propertyNode.TypeNode.Type, out object probe))
-            {
-                _probeObjects.Remove(propertyNode.TypeNode.Type);
-                target = probe;
-            }
-            else
-            {
-                target = _typesForest.ServiceProvider.GetService(propertyNode.TypeNode.Type);
-            }
-        }
-        ValueRequestKind valueRequestKind =
-            propertyNode.IsNullable
-                ? ValueRequestKind.NullableNode
-                : ValueRequestKind.NotNullableNode
-            ;
-        eventArgs.Init(null, target, _path.ToString(), valueRequestKind);
-        //eventArgs.Init(null, target, $"{Slash}{string.Join(Slash, _paths)}", valueRequestKind);
-        ValueRequest!.Invoke(eventArgs);
-        if (eventArgs.IsReset)
-        {
-            if (!_probeObjects.TryAdd(propertyNode.TypeNode.Type, target))
-            {
-                throw new Exception(IDontKnowWhy);
-            }
-            return null;
-        }
-        if (eventArgs.IsCommited)
-        {
-            return target;
-        }
-        if (propertyNode.TypeNode.ChildNodes is { } children)
-        {
-            _typesForest.ConfirmTypeNode(propertyNode.TypeNode, target.GetType());
-            int childPosition = 0;
-            object[]? key = null;
-            foreach (PropertyNode child in children)
-            {
-                int pathLength = _path.Length;
-                if (pathLength > 1)
-                {
-                    _path.Append(Slash);
-                }
-                _path.Append(child.SourcePropertyInfo.Name);
-                //_paths.Add(child.SourcePropertyInfo.Name);
-                if (child.TypeNode.ChildNodes is null)
-                {
-                    eventArgs.Init(child.PropertyInfo, target, _path.ToString(), ValueRequestKind.Terminal);
-                    //eventArgs.Init(child.PropertyInfo, target, $"{Slash}{string.Join(Slash, _paths)}", ValueRequestKind.Terminal);
-                    ValueRequest!.Invoke(eventArgs);
-                    if (!eventArgs.IsCommited)
-                    {
-                        _ignoredPaths.Add(eventArgs.Path);
-                    }
-                }
-                else
-                {
-                    object result = Build(child, child.PropertyInfo.GetValue(target));
-                    child.PropertyInfo.SetValue(target, result);
-                }
-                _path.Length = pathLength;
-                //_paths.RemoveAt(_paths.Count - 1);
-                childPosition++;
-                if (childPosition == propertyNode.TypeNode.KeysCount)
-                {
-                    key = propertyNode.TypeNode.GetKey(target);
-                    if (_objectCache.TryGet(propertyNode.TypeNode.Type, key, out object cachedObject))
-                    {
-                        if (!_probeObjects.TryAdd(propertyNode.TypeNode.Type, target))
-                        {
-                            throw new Exception(IDontKnowWhy);
-                        }
-                        target = cachedObject;
-                        key = null;
-                        break;
-                    }
-                }
-            }
-            if (key is { })
-            {
-                _objectCache.Add(propertyNode.TypeNode.Type, key, target);
-            }
-        }
-        return target;
-
-    }
 }

@@ -1,21 +1,39 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Net.Leksi.Dto;
 using NUnit.Framework;
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Reflection;
 using TestProject1.Dto1;
 
 namespace TestProject1;
 
 public class DtoBuilderUnitTest
 {
+    private IHost host;
+
     [OneTimeSetUp]
     public void OneTimeSetup()
     {
         Trace.Listeners.Add(new ConsoleTraceListener());
+        IHostBuilder hostBuilder = Host.CreateDefaultBuilder()
+            .ConfigureServices(serviceCollection =>
+            {
+                DtoKit.Install(serviceCollection, services =>
+                {
+                    services.AddTransient<IShipCall, ShipCall>();
+                    services.AddTransient<ILocation, Location>();
+                    services.AddTransient<IRoute, Route>();
+                    services.AddTransient<ILine, Line>();
+                    services.AddTransient<IVessel, Vessel>();
+                    services.AddTransient<IShipCallForListing, ShipCall>();
+                    services.AddTransient<IShipCallAdditionalInfo, ShipCall>();
+                    services.AddTransient<IRouteShort, Route>();
+                    services.AddTransient<IVesselShort, Vessel>();
+                });
+            });
+        host = hostBuilder.Build();
     }
 
     [OneTimeTearDown]
@@ -27,22 +45,13 @@ public class DtoBuilderUnitTest
     [SetUp]
     public void Setup()
     {
+        host.RunAsync();
     }
 
     [Test]
     public void Test1()
     {
-        DtoServiceProvider dsp = new(null);
-        dsp.AddTransient<IShipCall, ShipCall>();
-        dsp.AddTransient<ILocation, Location>();
-        dsp.AddTransient<IRoute, Route>();
-        dsp.AddTransient<ILine, Line>();
-        dsp.AddTransient<IVessel, Vessel>();
-        dsp.Commit();
-
-        TypesForest tf = new(dsp);
-
-        DtoBuilder dtoBuilder = new(tf);
+        DtoBuilder dtoBuilder = host.Services.GetRequiredService<DtoBuilder>();
 
         int tabPos = 35;
 
@@ -61,17 +70,7 @@ public class DtoBuilderUnitTest
     [Test]
     public void Test2()
     {
-        DtoServiceProvider dsp = new(null);
-        dsp.AddTransient<IShipCall, ShipCall>();
-        dsp.AddTransient<ILocation, Location>();
-        dsp.AddTransient<IRoute, Route>();
-        dsp.AddTransient<ILine, Line>();
-        dsp.AddTransient<IVessel, Vessel>();
-        dsp.Commit();
-
-        TypesForest tf = new(dsp);
-
-        DtoBuilder dtoBuilder = new(tf);
+        DtoBuilder dtoBuilder = host.Services.GetRequiredService<DtoBuilder>();
 
         Trace.WriteLine(dtoBuilder.GenerateHandlerSkeleton<IShipCall>());
     }
@@ -79,18 +78,7 @@ public class DtoBuilderUnitTest
     [Test]
     public void Test3()
     {
-        DtoServiceProvider dsp = new(null);
-        dsp.AddTransient<IShipCallForListing, ShipCall>();
-        dsp.AddTransient<IShipCallAdditionalInfo, ShipCall>();
-        dsp.AddTransient<ILocation, Location>();
-        dsp.AddTransient<IRouteShort, Route>();
-        dsp.AddTransient<ILine, Line>();
-        dsp.AddTransient<IVesselShort, Vessel>();
-        dsp.Commit();
-
-        TypesForest tf = new(dsp);
-
-        DtoBuilder dtoBuilder = new(tf);
+        DtoBuilder dtoBuilder = host.Services.GetRequiredService<DtoBuilder>();
 
         int i = 1;
 
@@ -106,33 +94,33 @@ public class DtoBuilderUnitTest
                     args.Value = i;
                     args.Commit();
                     break;
-                case "/Route/ID_LINE":
+                case "/RouteImpl/ID_LINE":
                     args.Value = "TRE";
                     args.Commit();
                     break;
-                case "/Route":
+                case "/RouteImpl":
                     break;
-                case "/Route/ID_RHEAD":
+                case "/RouteImpl/ID_RHEAD":
                     args.Value = 1;
                     args.Commit();
                     break;
-                case "/Route/Line":
+                case "/RouteImpl/Line":
                     break;
-                case "/Route/Line/ID_LINE":
+                case "/RouteImpl/Line/ID_LINE":
                     args.Value = "TRE";
                     args.Commit();
                     break;
-                case "/Route/Line/Name":
+                case "/RouteImpl/Line/Name":
                     args.Value = "TRE";
                     args.Commit();
                     break;
-                case "/Route/Vessel":
+                case "/RouteImpl/Vessel":
                     break;
-                case "/Route/Vessel/ID_VESSEL":
+                case "/RouteImpl/Vessel/ID_VESSEL":
                     args.Value = "VARYAG";
                     args.Commit();
                     break;
-                case "/Route/Vessel/Name":
+                case "/RouteImpl/Vessel/Name":
                     args.Value = "VARYAG";
                     args.Commit();
                     break;
@@ -174,6 +162,10 @@ public class DtoBuilderUnitTest
                 case "/Condition":
                     args.Commit();
                     break;
+                case "/AdditionalInfo":
+                    args.Commit();
+                    break;
+
             }
         };
 
@@ -188,53 +180,16 @@ public class DtoBuilderUnitTest
     [Test]
     public void Test4()
     {
-        DtoServiceProvider dsp = new(null);
-        dsp.AddTransient<ILocation, Location>();
-        dsp.AddTransient<IVessel, Vessel>();
-        dsp.Commit();
-
-        TypesForest tf = new(dsp);
-
-        DtoBuilder dtoBuilder = new(tf);
+        DtoBuilder dtoBuilder = host.Services.GetRequiredService<DtoBuilder>();
 
         Trace.WriteLine(dtoBuilder.GenerateHandlerSkeleton<IVessel>());
-    }
-
-    public class MyClass
-    {
-        // Should tell me I cannot assign a null
-        public int Age { get; set; }
-        public DateTime BirthDate { get; set; }
-        public object Family { get; set; }
-        // Should tell me I can assign a null
-        public DateTime? DateOfDeath { get; set; }
-    }
-
-    [Test]
-    public void Test5()
-    {
-        foreach (PropertyInfo pi in typeof(MyClass).GetProperties())
-        {
-            bool canBeNull = !pi.PropertyType.IsValueType && pi.GetCustomAttributes().Any(a => a.GetType().Name.Contains("NullableAttribute"))
-                || (Nullable.GetUnderlyingType(pi.PropertyType) != null);
-            Console.WriteLine($"{pi.Name}, {canBeNull}");
-        }
     }
 
     [Test]
     public void Test6()
     {
-        DtoServiceProvider dsp = new(null);
-        dsp.AddTransient<IShipCallForListing, ShipCall>();
-        dsp.AddTransient<ILocation, Location>();
-        dsp.AddTransient<IRoute, Route>();
-        dsp.AddTransient<ILine, Line>();
-        dsp.AddTransient<IVessel, Vessel>();
-        dsp.Commit();
 
-        TypesForest tf = new(dsp);
-
-        DtoBuilder dtoBuilder = new(tf);
+        DtoBuilder dtoBuilder = host.Services.GetRequiredService<DtoBuilder>();
 
         Trace.WriteLine(dtoBuilder.GenerateHandlerSkeleton<IShipCallForListing>());
     }

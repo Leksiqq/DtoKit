@@ -1,14 +1,13 @@
-﻿using System.Reflection;
-
-namespace Net.Leksi.Dto;
+﻿namespace Net.Leksi.Dto;
 
 public class ValueRequestEventArgs : EventArgs
 {
-    private PropertyInfo? _propertyInfo;
+    private PropertyNode _propertyNode;
     private string _path;
     private object _target;
-    private ValueRequestKind _kind;
     private bool _isReset = false;
+
+    internal PropertyNode PropertyNode => _propertyNode;
 
     internal object SuggestedValue { get; set; }
 
@@ -18,19 +17,19 @@ public class ValueRequestEventArgs : EventArgs
     {
         get
         {
-            return (_kind is ValueRequestKind.Terminal) ? _propertyInfo?.GetValue(_target) : _target;
+            return (Kind is ValueRequestKind.Terminal) ? _propertyNode.PropertyInfo?.GetValue(_target) : _target;
         }
         set
         {
             if (IsCommited)
             {
-                throw new InvalidOperationException("Request is already terminated.");
+                throw new InvalidOperationException("Request is already commited.");
             }
-            if (_kind is ValueRequestKind.NotNullableNode)
+            if (Kind is ValueRequestKind.NotNullableNode)
             {
                 throw new InvalidOperationException("At NotNullableNode request a value cannot be assigned.");
             }
-            if (_kind is ValueRequestKind.NullableNode)
+            if (Kind is ValueRequestKind.NullableNode)
             {
                 if(value is { })
                 {
@@ -41,26 +40,40 @@ public class ValueRequestEventArgs : EventArgs
             }
             else
             {
-                _propertyInfo.SetValue(_target, value);
+                _propertyNode.PropertyInfo.SetValue(_target, value);
             }
         }
     }
     public string Path => _path;
-    public PropertyInfo PropertyInfo => _propertyInfo;
 
-    public ValueRequestKind Kind => _kind;
+    public ValueRequestKind Kind
+    {
+        get
+        {
+            if (_propertyNode.PropertyInfo is null || (!_propertyNode.IsLeaf && !_propertyNode.IsNullable))
+            {
+                return ValueRequestKind.NotNullableNode;
+            }
+            if (!_propertyNode.IsLeaf)
+            {
+                return ValueRequestKind.NullableNode;
+            }
+            return ValueRequestKind.Terminal;
+        }
+    }
 
-    public Type ExpectedType => _propertyInfo?.PropertyType ?? _target.GetType();
+    public Type ExpectedType => _propertyNode?.PropertyInfo.PropertyType ?? _target.GetType();
 
     public bool IsCommited { get; private set; } = false;
 
-    internal void Init(PropertyInfo propertyInfo, object target, string path, ValueRequestKind kind)
+
+    internal void Init(PropertyNode propertyNode, object target, string path)
     {
-        _propertyInfo = propertyInfo;
-        _target = target;
+        _propertyNode = propertyNode;
         _path = path;
-        _kind = kind;
+        _target = target;
         IsCommited = false;
+        _isReset = false;
     }
 
     public void Commit()

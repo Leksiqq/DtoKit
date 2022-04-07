@@ -2,10 +2,12 @@
 
 public class TypeNode
 {
-    public Type Type { get; set; }
-    public List<PropertyNode>? ChildNodes { get; set; }
-    public bool IsConfirmed { get; set; } = false;
-    public int KeysCount { get; set; } = 0;
+    public Type Type { get; internal set; }
+    public Type ActualType { get; internal set; }
+    public List<PropertyNode>? ChildNodes { get; internal set; }
+    public int KeysCount { get; internal set; } = 0;
+
+    public List<ValueRequest>? ValueRequests { get; internal set; } = null;
 
     public object[] GetKey(object item)
     {

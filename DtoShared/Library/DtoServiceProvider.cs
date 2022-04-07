@@ -6,6 +6,7 @@ namespace Net.Leksi.Dto;
 public class DtoServiceProvider : IServiceProvider, IServiceCollection
 {
     private List<ServiceDescriptor> _serviceDescriptors = new();
+    private IServiceCollection? _services = null;
     private bool _commited = false;
 
     public ServiceDescriptor this[int index]
@@ -40,7 +41,9 @@ public class DtoServiceProvider : IServiceProvider, IServiceCollection
             instance.ServiceProvider = serviceProvider;
             return instance;
         });
+        instance._services = services;
         configure?.Invoke(instance);
+        instance._services = null;
         instance.Commit();
     }
 
@@ -95,6 +98,7 @@ public class DtoServiceProvider : IServiceProvider, IServiceCollection
             throw new InvalidOperationException($"{item.Lifetime} {item.ServiceType}");
         }
         _serviceDescriptors.Add(item);
+        _services?.Add(item);
     }
 
     public void Clear()
