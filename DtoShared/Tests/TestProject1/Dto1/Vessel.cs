@@ -31,5 +31,10 @@ public class Vessel : IVessel, IVesselShort
 
     public string Name { get; set; }
 
-    ILocation? IVessel.Port => Port;
+    ILocation? IVessel.Port { 
+        get => Port; 
+        set {
+            Port = (Location)value;
+        } 
+    }
 }

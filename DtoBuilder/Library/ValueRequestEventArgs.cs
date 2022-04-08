@@ -2,21 +2,21 @@
 
 public class ValueRequestEventArgs : EventArgs
 {
-    private PropertyNode _propertyNode;
-    private string _path;
-    private object _target;
+    private PropertyNode _propertyNode = null!;
+    private string _path = null!;
+    private object _target = null!;
     private object? _result;
     private bool _isReset = false;
 
     internal PropertyNode PropertyNode => _propertyNode;
 
-    internal object SuggestedValue { get; set; }
+    internal object? SuggestedValue { get; set; }
 
     internal bool IsReset => _isReset;
 
-    internal object Result => _result;
+    internal object? Result => _result;
 
-    public object Value
+    public object? Value
     {
         get
         {
@@ -48,7 +48,7 @@ public class ValueRequestEventArgs : EventArgs
             }
             else
             {
-                _propertyNode.PropertyInfo.SetValue(_target, value);
+                _propertyNode.PropertyInfo!.SetValue(_target, value);
             }
         }
     }
@@ -71,7 +71,8 @@ public class ValueRequestEventArgs : EventArgs
         }
     }
 
-    public Type ExpectedType => _propertyNode?.PropertyInfo.PropertyType ?? _target.GetType();
+    public Type NominalType => _propertyNode.TypeNode.Type;
+    public Type ActualType => _propertyNode.PropertyInfo?.PropertyType ?? _target?.GetType();
 
     public bool IsCommited { get; private set; } = false;
 

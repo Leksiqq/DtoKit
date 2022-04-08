@@ -102,7 +102,7 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
             {
                 if (reader.TokenType == JsonTokenType.EndObject)
                 {
-                    if(key is { })
+                    if (key is { })
                     {
                         _objectCache.Add(typeNode.Type, key, item);
                     }
@@ -116,15 +116,15 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
 
 
                 string? propertyName = reader.GetString();
-                if(propertyName is null)
+                if (propertyName is null)
                 {
                     throw new JsonException();
                 }
 
-                if(propertyName.StartsWith(DollarSign))
+                if (propertyName.StartsWith(DollarSign))
                 {
                     JsonElement obj = (JsonElement)JsonSerializer.Deserialize<object>(ref reader);
-                    if(propertyName == KeyOnlyPropertyName && obj.ValueKind is JsonValueKind.True)
+                    if (propertyName == KeyOnlyPropertyName && obj.ValueKind is JsonValueKind.True)
                     {
                         if (_objectCache.TryGet(typeNode.Type, key, out object cachedObject))
                         {
@@ -137,7 +137,7 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
                         }
                     }
                 }
-                else 
+                else
                 {
                     PropertyNode propertyNode = _factory.TypesForest.GetPropertyNode(typeNode, propertyName);
 
@@ -288,7 +288,26 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
         }
         else
         {
-            Type? actualType = value!.GetType();
+
+            if (typeof(T).IsGenericType && typeof(T).GetGenericTypeDefinition() == typeof(KeyStub<>))
+            {
+                if (_factory.KeyStubDetected)
+                {
+                    throw new InvalidOperationException($"Nested {typeof(KeyStub<T>)} is not allowed");
+                }
+                _factory.KeyStubDetected = true;
+                Type actualType = typeof(T).GetGenericArguments()[0];
+                try
+                {
+                    object? sourceValue = typeof(T).GetProperty("Source")!.GetValue(value);
+                    JsonSerializer.Serialize(writer, sourceValue, actualType, options);
+                    return;
+                }
+                finally
+                {
+                    _factory.KeyStubDetected = false;
+                }
+            }
 
             TypeNode typeNode = _factory.TypesForest.GetTypeNode(typeof(T));
 
@@ -300,7 +319,7 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
             }
             int propertyPosition = 0;
             object[]? key = null;
-            if(typeNode.ChildNodes is { })
+            if (typeNode.ChildNodes is { })
             {
                 foreach (PropertyNode propertyNode in typeNode.ChildNodes)
                 {
@@ -314,20 +333,30 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
                         JsonSerializer.Serialize(writer, propertyNode.PropertyInfo.GetValue(value), propertyNode.TypeNode.Type, options);
                     }
                     propertyPosition++;
-                    if (_factory.WithKeyOnlyForRepeated && propertyPosition == typeNode.KeysCount)
+                    if (propertyPosition == typeNode.KeysCount)
                     {
-                        key = typeNode.GetKey(value);
-                        if (_objectCache.TryGet(typeNode.Type, key, out object cachedObject))
+                        if (_factory.WithKeyOnlyForRepeated)
                         {
-                            key = null;
+                            key = typeNode.GetKey(value);
+                            if (_objectCache.TryGet(typeNode.Type, key, out object cachedObject))
+                            {
+                                key = null;
+                                writer.WritePropertyName(KeyOnlyPropertyName);
+                                writer.WriteBooleanValue(true);
+                                break;
+                            }
+                        }
+                        else if (_factory.KeyStubDetected)
+                        {
                             writer.WritePropertyName(KeyOnlyPropertyName);
                             writer.WriteBooleanValue(true);
                             break;
+
                         }
                     }
                 }
             }
-            if(_factory.WithKeyOnlyForRepeated && key is { })
+            if (_factory.WithKeyOnlyForRepeated && key is { })
             {
                 _objectCache.Add(typeNode.Type, key, value);
             }

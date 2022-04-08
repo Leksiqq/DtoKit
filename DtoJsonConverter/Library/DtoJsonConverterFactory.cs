@@ -28,7 +28,7 @@ namespace Net.Leksi.Dto;
 public class DtoJsonConverterFactory : JsonConverterFactory
 {
 
-    internal event EventHandler ObjectCachesClear;
+    internal event EventHandler? ObjectCachesClear;
 
     private readonly EventArgs _eventArgs = new();
 
@@ -84,6 +84,8 @@ public class DtoJsonConverterFactory : JsonConverterFactory
             }
         }
     }
+
+    internal bool KeyStubDetected { get; set; } = false;
 
     /// <summary>
     /// <para xml:lang="ru">
@@ -156,6 +158,10 @@ public class DtoJsonConverterFactory : JsonConverterFactory
         // Если вызвана десериализация для одного из типов-заглушек: AppendableListStub<> или RewritableListStub<>,
         // используемых для 2) варианта применения (см. описание класса)
         if (TypesForest.ServiceProvider.Select(sd => sd.ServiceType).Any(t => typeof(ListStub<>).MakeGenericType(new Type[] { t }).IsAssignableFrom(typeToConvert)))
+        {
+            return true;
+        }
+        if (typeToConvert.IsGenericType && typeToConvert.GetGenericTypeDefinition() == typeof(KeyStub<>))
         {
             return true;
         }

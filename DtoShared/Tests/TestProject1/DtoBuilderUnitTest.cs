@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Hosting;
 using Net.Leksi.Dto;
 using NUnit.Framework;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -30,8 +31,11 @@ public class DtoBuilderUnitTest
                     services.AddTransient<IVessel, Vessel>();
                     services.AddTransient<IShipCallForListing, ShipCall>();
                     services.AddTransient<IShipCallAdditionalInfo, ShipCall>();
+                    services.AddTransient<IArrivalShipCall, ShipCall>();
+                    services.AddTransient<IDepartureShipCall, ShipCall>();
                     services.AddTransient<IRouteShort, Route>();
                     services.AddTransient<IVesselShort, Vessel>();
+                    services.AddTransient<ITravelForListing, Travel>();
                 });
             });
         host = hostBuilder.Build();
@@ -65,7 +69,8 @@ public class DtoBuilderUnitTest
             }
         };
 
-        dtoBuilder.Build<IShipCall>();
+        IShipCall shipCall = dtoBuilder.Build<IShipCall>();
+
     }
 
     [Test]
@@ -175,6 +180,7 @@ public class DtoBuilderUnitTest
         for(; i <= 3; i++)
         {
             shipCalls.Add(dtoBuilder.Build<IShipCallForListing>());
+
         }
     }
 
@@ -242,6 +248,100 @@ public class DtoBuilderUnitTest
         DtoBuilder dtoBuilder = host.Services.GetRequiredService<DtoBuilder>();
 
         Trace.WriteLine(dtoBuilder.GenerateHandlerSkeleton<IShipCallForListing>());
+    }
+
+    [Test]
+    public void Test7()
+    {
+
+        DtoBuilder dtoBuilder = host.Services.GetRequiredService<DtoBuilder>();
+
+        Trace.WriteLine(dtoBuilder.GenerateHelperSkeleton<ITravelForListing>());
+    }
+
+    class TravelHelper
+    {
+        [Path("/ArrivalShipCall", typeof(NodeSetter))]
+        public object Set_ArrivalShipCall(object value, bool isNullable, ref bool isCommited)
+        {
+            return null;
+        }
+
+        [Path("/ArrivalShipCall/ID_LINE", typeof(TerminalSetter))]
+        public object Set_ArrivalShipCall_ID_LINE(object value)
+        {
+            throw new NotImplementedException();
+        }
+
+        [Path("/ArrivalShipCall/ID_ROUTE", typeof(TerminalSetter))]
+        public object Set_ArrivalShipCall_ID_ROUTE(object value)
+        {
+            throw new NotImplementedException();
+        }
+
+        [Path("/ArrivalShipCall/ActualArrival", typeof(TerminalSetter))]
+        public object Set_ArrivalShipCall_ActualArrival(object value)
+        {
+            throw new NotImplementedException();
+        }
+
+        [Path("/ArrivalShipCall/Location", typeof(NodeSetter))]
+        public object Set_ArrivalShipCall_Location(object value, bool isNullable, ref bool isCommited)
+        {
+            throw new NotImplementedException();
+        }
+
+        [Path("/ArrivalShipCall/Location/ID_LOCATION", typeof(TerminalSetter))]
+        public object Set_ArrivalShipCall_Location_ID_LOCATION(object value)
+        {
+            throw new NotImplementedException();
+        }
+
+        [Path("/ArrivalShipCall/Location/Name", typeof(TerminalSetter))]
+        public object Set_ArrivalShipCall_Location_Name(object value)
+        {
+            throw new NotImplementedException();
+        }
+
+        [Path("/ArrivalShipCall/Location/Type", typeof(TerminalSetter))]
+        public object Set_ArrivalShipCall_Location_Type(object value)
+        {
+            throw new NotImplementedException();
+        }
+
+        [Path("/ArrivalShipCall/Location/Unlocode", typeof(TerminalSetter))]
+        public object Set_ArrivalShipCall_Location_Unlocode(object value)
+        {
+            throw new NotImplementedException();
+        }
+
+        [Path("/DepartureShipCall", typeof(NodeSetter))]
+        public object Set_DepartureShipCall(object value, bool isNullable, ref bool isCommited)
+        {
+            throw new NotImplementedException();
+        }
+
+        [Path("/DepartureShipCall/ID_LINE", typeof(TerminalSetter))]
+        public object Set_DepartureShipCall_ID_LINE(object value)
+        {
+            throw new NotImplementedException();
+        }
+
+        [Path("/DepartureShipCall/ID_ROUTE", typeof(TerminalSetter))]
+        public object Set_DepartureShipCall_ID_ROUTE(object value)
+        {
+            throw new NotImplementedException();
+        }
+
+    }
+
+    [Test]
+    public void Test8()
+    {
+
+        DtoBuilder dtoBuilder = host.Services.GetRequiredService<DtoBuilder>();
+
+        dtoBuilder.Build<ITravelForListing>(new TravelHelper());
     }
 
 }

@@ -3,7 +3,7 @@ using System;
 
 namespace TestProject1.Dto1;
 
-public class ShipCall : IShipCall, IShipCallForListing
+public class ShipCall : IShipCall, IShipCallForListing, IDepartureShipCall, IArrivalShipCall
 {
     [Key]
     public string ID_LINE { get; set; }
@@ -11,7 +11,7 @@ public class ShipCall : IShipCall, IShipCallForListing
     [Key]
     public int ID_ROUTE { get; set; }
 
-    public Route RouteImpl { get; set; }
+    public Route Route { get; set; }
 
     public string Voyage { get; set; }
 
@@ -31,13 +31,17 @@ public class ShipCall : IShipCall, IShipCallForListing
 
     public string AdditionalInfo { get; set; } = "N/A";
 
-    [ActualProperty(nameof(RouteImpl))]
-    IRoute IShipCall.Route => RouteImpl;
+    IRoute IShipCall.Route => Route;
 
-    [ActualProperty(nameof(RouteImpl))]
-    IRouteShort IShipCallForListing.Route => RouteImpl;
+    IRouteShort IShipCallForListing.Route => Route;
+
+    IRouteShort IDepartureShipCall.Route => Route;
 
     ILocation IShipCall.Location => Location;
 
     ILocation IShipCallForListing.Location => Location;
+
+    ILocation IDepartureShipCall.Location => Location;
+
+    ILocation IArrivalShipCall.Location => Location;
 }

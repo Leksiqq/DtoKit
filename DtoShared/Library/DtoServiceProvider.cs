@@ -57,27 +57,24 @@ public class DtoServiceProvider : IServiceProvider, IServiceCollection
     public object? GetService(Type serviceType)
     {
         ServiceDescriptor item = _serviceDescriptors.Where(item => item.ServiceType == serviceType).FirstOrDefault();
-        if (item is { })
+        if (item is { } && InstantiateService(item) is { } result)
         {
-            return InstantiateService(item);
+            return result;
         }
-        return null;
+        return ServiceProvider.GetService(serviceType);
     }
 
-    private object InstantiateService(ServiceDescriptor item)
+    private object? InstantiateService(ServiceDescriptor item)
     {
+        if(item.ImplementationInstance is { })
+        {
+            return item.ImplementationInstance;
+        }
         if (item.ImplementationFactory is Func<IServiceProvider, object> implementation)
         {
             return implementation.Invoke(ServiceProvider);
         }
-        try
-        {
-            return Activator.CreateInstance(item.ImplementationType);
-        }
-        catch (MissingMethodException ex)
-        {
-            return ServiceProvider.GetService(item.ServiceType);
-        }
+        return null;
     }
 
     public void Add(ServiceDescriptor item)
@@ -90,8 +87,15 @@ public class DtoServiceProvider : IServiceProvider, IServiceCollection
         {
             throw new InvalidOperationException($"{item.Lifetime} must be {ServiceLifetime.Transient} for {item.ServiceType}");
         }
-        _serviceDescriptors.Add(item);
-        _services?.Add(item);
+        if(_services is { })
+        {
+            _serviceDescriptors.Add(new ServiceDescriptor(item.ServiceType, item.ServiceType, item.Lifetime));
+            _services.Add(item);
+        }
+        else
+        {
+            _serviceDescriptors.Add(item);
+        }
     }
 
     public void Clear()

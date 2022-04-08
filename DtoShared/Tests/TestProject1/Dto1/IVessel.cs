@@ -2,7 +2,7 @@
 
 public interface IVessel
 {
-    ILocation? Port { get; }
+    ILocation? Port { get; set; }
     public double Length { get; }
 
     public double Width { get; }

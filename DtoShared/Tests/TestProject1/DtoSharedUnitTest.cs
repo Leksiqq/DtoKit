@@ -42,8 +42,11 @@ public class DtoSharedUnitTest
                     services.AddTransient<IVessel, Vessel>();
                     services.AddTransient<IShipCallForListing, ShipCall>();
                     services.AddTransient<IShipCallAdditionalInfo, ShipCall>();
+                    services.AddTransient<IArrivalShipCall, ShipCall>();
+                    services.AddTransient<IDepartureShipCall, ShipCall>();
                     services.AddTransient<IRouteShort, Route>();
                     services.AddTransient<IVesselShort, Vessel>();
+                    services.AddTransient<ITravelForListing, Travel>();
                 });
             });
         IHost host = hostBuilder.Build();

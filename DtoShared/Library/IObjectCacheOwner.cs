@@ -2,5 +2,5 @@
 
 public interface IObjectCacheOwner
 {
-    void OnObjectCachesClear(object sender, EventArgs args);
+    void OnObjectCachesClear(object? sender, EventArgs args);
 }

@@ -78,6 +78,10 @@ public class DtoJsonConverterUnitTest
         string json = JsonSerializer.Serialize(shipCall, options);
 
         Console.WriteLine(json);
+
+        json = JsonSerializer.Serialize(new KeyStub<IShipCall>(shipCall), options);
+
+        Console.WriteLine(json);
     }
 
     [Test]
@@ -187,10 +191,8 @@ public class DtoJsonConverterUnitTest
         Console.WriteLine(json);
 
         converter = converter = host.Services.GetRequiredService<DtoJsonConverterFactory>();
-        converter.WithMagic = withMagic;
-        converter.WithKeyOnlyForRepeated = false;
 
-        options = new JsonSerializerOptions { WriteIndented = true };
+        options = new JsonSerializerOptions();
         options.Converters.Add(converter);
 
         var res = new List<IShipCallForListing>();
@@ -224,10 +226,8 @@ public class DtoJsonConverterUnitTest
         Console.WriteLine(json);
 
         converter = converter = host.Services.GetRequiredService<DtoJsonConverterFactory>();
-        converter.WithMagic = withMagic;
-        converter.WithKeyOnlyForRepeated = withKeyOnly;
 
-        options = new JsonSerializerOptions { WriteIndented = true };
+        options = new JsonSerializerOptions();
         options.Converters.Add(converter);
 
         converter.Target = res;
@@ -244,6 +244,24 @@ public class DtoJsonConverterUnitTest
         json = JsonSerializer.Serialize(res, options);
 
         Console.WriteLine(json);
+
+        json = JsonSerializer.Serialize(new KeyStub<List<IShipCallForListing>>(res), options);
+
+        Console.WriteLine(json);
+
+        converter = converter = host.Services.GetRequiredService<DtoJsonConverterFactory>();
+
+        options = new JsonSerializerOptions();
+        options.Converters.Add(converter);
+
+        res.Clear();
+        converter.Target = res;
+        JsonSerializer.Deserialize<RewritableListStub<IShipCallForListing>>(json, options);
+
+        foreach(IShipCallForListing item in res)
+        {
+            Console.WriteLine(item);
+        }
 
     }
 
