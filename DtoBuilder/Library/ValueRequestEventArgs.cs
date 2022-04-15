@@ -37,13 +37,12 @@ public class ValueRequestEventArgs : EventArgs
                 if(!object.ReferenceEquals(value, _target))
                 {
                     _result = value;
-                    _isReset = true;
                 }
             }
             else if (Kind is ValueRequestKind.NullableNode)
             {
                 _result = value;
-                _isReset = true;
+                _isReset = value is null;
                 IsCommited = value is null;
             }
             else

@@ -155,6 +155,7 @@ public class DtoBuilder
                 if (!request.PropertyNode.IsLeaf)
                 {
                     targets.Push(null);
+                    typeNodes.Push(request.PropertyNode.TypeNode);
                 }
             }
             for (int i = request.PopsCount; i < 0; i++)
