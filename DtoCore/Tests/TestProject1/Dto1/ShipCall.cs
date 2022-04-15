@@ -11,7 +11,7 @@ public class ShipCall : IShipCall, IShipCallForListing, IDepartureShipCall, IArr
     [Key]
     public int ID_ROUTE { get; set; }
 
-    public Route Route { get; set; }
+    public Route RouteImpl { get; set; }
 
     public string Voyage { get; set; }
 
@@ -31,11 +31,14 @@ public class ShipCall : IShipCall, IShipCallForListing, IDepartureShipCall, IArr
 
     public string AdditionalInfo { get; set; } = "N/A";
 
-    IRoute IShipCall.Route => Route;
+    [ActualProperty("RouteImpl")]
+    IRoute IShipCall.Route => RouteImpl;
 
-    IRouteShort IShipCallForListing.Route => Route;
+    [ActualProperty("RouteImpl")]
+    IRouteShort IShipCallForListing.Route => RouteImpl;
 
-    IRouteShort IDepartureShipCall.Route => Route;
+    [ActualProperty("RouteImpl")]
+    IRouteShort IDepartureShipCall.Route => RouteImpl;
 
     ILocation IShipCall.Location => Location;
 

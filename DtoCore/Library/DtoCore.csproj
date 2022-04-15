@@ -17,7 +17,9 @@
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<PackageId>Net.Leksi.$(AssemblyName)</PackageId>
 		<Authors>Alexey leksiq Zakharov</Authors>
-		<RepositoryUrl>https://sourceforge.net/p/dtoshared/code</RepositoryUrl>
+		<RepositoryUrl>https://sourceforge.net/p/dtokit/code</RepositoryUrl>
+		<RepositoryUrl>https://github.com/Leksiqq/DtoKit</RepositoryUrl>
+		<PackageProjectUrl>https://dtokit.sourceforge.io/</PackageProjectUrl>
 		<PackageTags>JSON;ASP.NET;Data Transfer Object</PackageTags>
 	</PropertyGroup>
 

@@ -10,12 +10,12 @@ namespace Net.Leksi.Dto;
 /// <para xml:lang="ru">
 /// Конвертер для сериализации/десериализации DTO (предполагается, что свойства реализуемого интерфейса пишутся и читаются, 
 /// возможны свойства, отмеченные атрибутом KeyAttribute, отсутствующие в интерфейсе с целью сокрытия конкреной реализации
-/// хранения). Порождается фабрикой <see cref="TransferJsonConverterFactory"/> если соответствующий интерфейс в ней зарегистрирован
+/// хранения). Порождается фабрикой <see cref="DtoJsonConverterFactory"/> если соответствующий интерфейс в ней зарегистрирован
 /// </para>
 /// <para xml:lang="en">
 /// Converter for DTO serialization/deserialization (it is assumed that the properties of the implemented interface are written and read,
 /// possible properties marked with the KeyAttribute attribute that are not present in the interface in order to hide the concrete implementation
-/// storage). Raised by the factory <see cref="TransferJsonConverterFactory"/> if the corresponding interface is registered in it
+/// storage). Raised by the factory <see cref="DtoJsonConverterFactory"/> if the corresponding interface is registered in it
 /// </para>
 /// </summary>
 /// <typeparam name="T"></typeparam>
@@ -38,7 +38,7 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
         }
     }
 
-    public void OnObjectCachesClear(object sender, EventArgs args)
+    public void OnObjectCachesClear(object? sender, EventArgs args)
     {
         _objectCache.Clear();
     }

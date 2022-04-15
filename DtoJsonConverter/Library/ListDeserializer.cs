@@ -26,7 +26,7 @@ internal class ListDeserializer<T> : JsonConverter<ListStub<T>> where T : class
 {
     private readonly DtoJsonConverterFactory _factory;
     private readonly ListStubKind _kind;
-    private KeyComparer? _keyComparer = null;
+    private KeyEqualityComparer? _keyComparer = null;
     private Dictionary<int, object[]>? _keysMap = null;
     private TypeNode? _typeNode = null;
     private ObjectCache? _objectCache = null;
@@ -41,30 +41,30 @@ internal class ListDeserializer<T> : JsonConverter<ListStub<T>> where T : class
     /// <inheritdoc cref="JsonConverter{T}.Read(ref Utf8JsonReader, Type, JsonSerializerOptions)"/>
     /// <returns>
     /// <para xml:lang="ru">
-    /// Возвращает заглушку, заполненный лист передаётся через <see cref="TransferJsonConverterFactory.Target"/>
+    /// Возвращает заглушку, заполненный лист передаётся через <see cref="DtoJsonConverterFactory.Target"/>
     /// </para>
     /// <para xml:lang="en">
-    /// Returns a stub, the filled sheet is passed via <see cref="TransferJsonConverterFactory.Target"/>
+    /// Returns a stub, the filled sheet is passed via <see cref="DtoJsonConverterFactory.Target"/>
     /// </para>
     /// </returns>
     /// <exception cref="JsonException">
     /// <para xml:lang="ru">
     /// 1) Если элемент JSON не является массивом
-    /// 2) Если <see cref="TransferJsonConverterFactory.UseEndOfDataNull"/><c> == true</c>, при этом встретился 
+    /// 2) Если <see cref="DtoJsonConverterFactory.UseEndOfDataNull"/><c> == true</c>, при этом встретился 
     /// элемент после <c>null</c>
     /// </para>
     /// <para xml:lang="en">
     /// 1) If the JSON element is not an array
-    /// 2) If <see cref="TransferJsonConverterFactory.UseEndOfDataNull"/><c> == true</c>, and there is an element after <c>null</c>
+    /// 2) If <see cref="DtoJsonConverterFactory.UseEndOfDataNull"/><c> == true</c>, and there is an element after <c>null</c>
     /// </para>    
-    /// /// </exception>
+    /// </exception>
     public override ListStub<T>? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         IList? result = null;
         T? updateableProbe = null;
         if(_kind is ListStubKind.Updateable)
         {
-            _keyComparer = new KeyComparer();
+            _keyComparer = new KeyEqualityComparer();
             _keysMap = new Dictionary<int, object[]>();
             _typeNode = _factory.TypesForest.GetTypeNode(typeof(T));
             _objectCache = new ObjectCache();

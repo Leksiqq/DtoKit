@@ -20,7 +20,7 @@
     <ProjectReference Include="..\..\..\DtoBuilder\Library\DtoBuilderDebug.csproj" />
     <ProjectReference Include="..\..\..\DtoJsonConverter\Library\DtoJsonConverterDebug.csproj" />
     <ProjectReference Include="..\..\..\DtoKit\DtoKitDebug.csproj" />
-    <ProjectReference Include="..\..\Library\DtoSharedDebug.csproj" />
+    <ProjectReference Include="..\..\Library\DtoCoreDebug.csproj" />
   </ItemGroup>
 
 </Project>

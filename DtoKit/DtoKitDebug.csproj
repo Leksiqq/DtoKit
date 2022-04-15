@@ -10,8 +10,8 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\DtoBuilder\Library\DtoBuilderDebug.csproj" />
+	  <ProjectReference Include="..\DtoCore\Library\DtoCoreDebug.csproj" />
 	  <ProjectReference Include="..\DtoJsonConverter\Library\DtoJsonConverterDebug.csproj" />
-	  <ProjectReference Include="..\DtoShared\Library\DtoSharedDebug.csproj" />
 	</ItemGroup>
 
 </Project>

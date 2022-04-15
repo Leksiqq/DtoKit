@@ -4,6 +4,14 @@ using System.Text;
 
 namespace Net.Leksi.Dto;
 
+/// <summary>
+/// <para xml:lang="ru">
+/// "Лес" деревьев "свойств и типов" - служит для построения и хранения таких деревьев
+/// </para>
+/// <para xml:lang="en">
+/// "Forest" of trees of "properties and types" - serves to build and store such trees
+/// </para>
+/// </summary>
 public class TypesForest
 {
     
@@ -13,61 +21,117 @@ public class TypesForest
 
     private static readonly PropertyNodeComparer _propertyNodeComparer = new();
 
-    public Dictionary<Type, TypeNode> TypeTrees { get; init; } = new();
+    private Dictionary<Type, TypeNode> _typeTrees { get; init; } = new();
 
     public DtoServiceProvider ServiceProvider { get; init; }
 
-    public TypesForest(DtoServiceProvider _serviceProvider)
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Инициализирует <see cref="DtoServiceProvider"/>
+    /// </para>
+    /// <para xml:lang="en">
+    /// Initializes <see cref="DtoServiceProvider"/>
+    /// </para>
+    /// </summary>
+    /// <param name="serviceProvider"></param>
+    /// <exception cref="ArgumentNullException">
+    /// <para xml:lang="ru">
+    /// Плохо, если <see cref="DtoServiceProvider"/> является <code>null</code>,
+    /// так как ничего не получится сделать
+    /// </para>
+    /// <para xml:lang="en">
+    /// Bad if <see cref="DtoServiceProvider"/> is <code>null</code>,
+    /// since nothing can be done
+    /// </para>
+    /// </exception>
+    public TypesForest(DtoServiceProvider serviceProvider)
     {
-        ServiceProvider = _serviceProvider;
+        ServiceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
     }
-
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Возвращает корневой узел дерева, соответствующего указанному типу.
+    /// Если такого дерева в лесу нет, сажает его, выращивает и возвращает
+    /// </para>
+    /// <para xml:lang="en">
+    /// Returns the root node of the tree corresponding to the specified type.
+    /// If there is no such tree in the forest, plant it, grow it and return it
+    /// </para>
+    /// </summary>
+    /// <param name="type">
+    /// <para xml:lang="ru">
+    /// Запрашиваемый тип
+    /// </para>
+    /// <para xml:lang="en">
+    /// Requested type
+    /// </para>
+    /// </param>
+    /// <returns></returns>
     public TypeNode GetTypeNode(Type type)
     {
-        if (!TypeTrees.ContainsKey(type))
+        if (!_typeTrees.ContainsKey(type))
         {
             PlantTypeTree(type);
         }
-        return TypeTrees[type];
-    }
-
-    public TypeNode GetTypeNode<T>() where T : class
-    {
-        return GetTypeNode(typeof(T));
+        return _typeTrees[type];
     }
 
     public PropertyNode? GetPropertyNode(TypeNode typeNode, string propertyName)
     {
-        if (typeNode?.ChildNodes is { } children)
-        {
-            return children.Find(propertyNode => propertyNode.Name == propertyName);
-        }
-        return null;
+        return typeNode?.ChildNodes.Find(propertyNode => propertyNode.Name == propertyName);
     }
 
-    public bool PlantTypeTree(Type type)
+    public void Copy(Type sourceType, object source, object target)
+    {
+        TypeNode typeNode = GetTypeNode(sourceType);
+        foreach (PropertyNode propertyNode in typeNode.ChildNodes)
+        {
+            object? sourceValue = propertyNode.PropertyInfo.GetValue(source);
+            if (sourceValue is null)
+            {
+                propertyNode.PropertyInfo.SetValue(target, null);
+            }
+            else
+            {
+                if (propertyNode.TypeNode.ChildNodes is { } children)
+                {
+                    object? targetValue = propertyNode.PropertyInfo.GetValue(target);
+                    if (targetValue is null)
+                    {
+                        targetValue = ServiceProvider.GetRequiredService(propertyNode.TypeNode.Type);
+                        propertyNode.PropertyInfo.SetValue(target, targetValue);
+                    }
+                    Copy(propertyNode.TypeNode.Type, sourceValue, targetValue);
+                }
+                else
+                {
+                    propertyNode.PropertyInfo.SetValue(target, sourceValue);
+                }
+            }
+
+        }
+    }
+
+    private bool PlantTypeTree(Type type)
     {
         if (!ServiceProvider.IsRegistered(type))
         {
             throw new ArgumentException($"{type} is not registered.");
         }
-        bool result = !TypeTrees.ContainsKey(type);
+        bool result = !_typeTrees.ContainsKey(type);
         if (result)
         {
             lock (type)
             {
-                result = !TypeTrees.ContainsKey(type);
+                result = !_typeTrees.ContainsKey(type);
                 if (result)
                 {
-                    TypeTrees[type] = new TypeNode { Type = type, ChildNodes = new List<PropertyNode>() };
+                    _typeTrees[type] = new TypeNode { Type = type, ChildNodes = new List<PropertyNode>() };
                     List<Type> antiLoop = new() { type };
-                    ConfigureTypeNode(TypeTrees[type], antiLoop);
+                    ConfigureTypeNode(_typeTrees[type], antiLoop);
 
-                    TypeTrees[type].ValueRequests = new List<ValueRequest>();
-                    CollectValueRequests(TypeTrees[type], TypeTrees[type].ValueRequests);
-
-                    //Console.WriteLine();
-                    //Console.WriteLine(string.Join("\n", TypeTrees[type].ValueRequests.Select(v => $"{v.Path}, {(!v.PropertyNode.IsLeaf ? ("+" + v.PropertyNode.TypeNode.Type) : string.Empty) }, {(v.PopsCount != 0 ? v.PopsCount.ToString() : string.Empty)}")));
+                    _typeTrees[type].ValueRequests = new List<ValueRequest>();
+                    CollectValueRequests(_typeTrees[type], _typeTrees[type].ValueRequests!);
                 }
             }
         }
@@ -97,10 +161,10 @@ public class TypesForest
                 PropertyNode = new PropertyNode { TypeNode = typeNode }
             });
         }
-        foreach(PropertyNode propertyNode in typeNode.ChildNodes)
+        foreach(PropertyNode propertyNode in typeNode.ChildNodes!)
         {
             int pathLength = path.Length;
-            path.Append(Slash).Append(propertyNode.PropertyInfo.Name);
+            path.Append(Slash).Append(propertyNode.PropertyInfo!.Name);
             ValueRequest request = new ValueRequest
             {
                 Path = path.ToString(),
@@ -109,7 +173,7 @@ public class TypesForest
             requests.Add(request);
             if (!propertyNode.IsLeaf)
             {
-                foreach(ValueRequest req in propertyNode.TypeNode.ValueRequests)
+                foreach(ValueRequest req in propertyNode.TypeNode.ValueRequests!)
                 {
                     if(req.Path != Slash)
                     {
@@ -167,7 +231,7 @@ public class TypesForest
             }
             else
             {
-                PropertyInfo sourceProperty = properties.Where(
+                PropertyInfo? sourceProperty = properties.Where(
                     v => v.Name == propertyInfo.Name && v.PropertyType == propertyInfo.PropertyType
                 ).FirstOrDefault();
                 if (sourceProperty is PropertyInfo)
@@ -177,7 +241,7 @@ public class TypesForest
             }
             if (actualProperty is PropertyInfo && actualProperty.CanWrite)
             {
-                bool foundTypeNode = TypeTrees.ContainsKey(propertyInfo.PropertyType);
+                bool foundTypeNode = _typeTrees.ContainsKey(propertyInfo.PropertyType);
                 var newPropertyNode = new PropertyNode
                 {
                     Name = propertyInfo.Name.Contains(Dot) 
@@ -189,10 +253,10 @@ public class TypesForest
                         : new TypeNode { Type = propertyInfo.PropertyType, ActualType = propertyInfo.PropertyType },
                     IsNullable = propertyInfo.GetCustomAttributes().Any(a => a.GetType().Name.Contains(_nullableAttributeName))
                 };
-                typeNode.ChildNodes.Add(newPropertyNode);
+                typeNode.ChildNodes!.Add(newPropertyNode);
             }
         }
-        typeNode.ChildNodes.Sort(_propertyNodeComparer);
+        typeNode.ChildNodes!.Sort(_propertyNodeComparer);
     }
 
     private void CollectActualProperties(TypeNode typeNode, List<PropertyInfo> actualProperties, List<Type> antiLoop)
@@ -209,7 +273,7 @@ public class TypesForest
                 }
                 actualProperties.Add(propertyInfo);
             }
-            currentType = currentType.BaseType;
+            currentType = currentType.BaseType!;
         }
     }
 
@@ -240,33 +304,4 @@ public class TypesForest
         }
     }
 
-    public void Copy(Type sourceType, object source, object target)
-    {
-        TypeNode typeNode = GetTypeNode(sourceType);
-        foreach(PropertyNode propertyNode in typeNode.ChildNodes)
-        {
-            object? sourceValue = propertyNode.PropertyInfo.GetValue(source);
-            if (sourceValue is null) {
-                propertyNode.PropertyInfo.SetValue(target, null);
-            }
-            else
-            {
-                if(propertyNode.TypeNode.ChildNodes is { } children)
-                {
-                    object? targetValue = propertyNode.PropertyInfo.GetValue(target);
-                    if (targetValue is null)
-                    {
-                        targetValue = ServiceProvider.GetRequiredService(propertyNode.TypeNode.Type);
-                        propertyNode.PropertyInfo.SetValue(target, targetValue);
-                    }
-                    Copy(propertyNode.TypeNode.Type, sourceValue, targetValue);
-                }
-                else
-                {
-                    propertyNode.PropertyInfo.SetValue(target, sourceValue);
-                }
-            }
-
-        }
-    }
 }

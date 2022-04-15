@@ -4,11 +4,26 @@ using System.Text;
 
 namespace Net.Leksi.Dto;
 
+/// <summary>
+/// <para xml:lang="ru">
+/// Класс для построения дерева объекта, ограниченного деревом применённого интерфейса
+/// </para>
+/// <para xml:lang="en">
+/// Class for building a tree of an object, limited by the tree of the applied interface
+/// </para>
+/// </summary>
 public class DtoBuilder
 {
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Событие для работы с хэндлером
+    /// </para>
+    /// <para xml:lang="en">
+    /// Event for working with the handler
+    /// </para>
+    /// </summary>
     public event ValueRequestEventHandler? ValueRequest;
 
-    private const string IDontKnowWhy = "Какая-то неведомая фигня";
     private const string SetUp = nameof(SetUp);
     private const string ShutDown = nameof(ShutDown);
     private const string Before = nameof(Before);
@@ -21,13 +36,80 @@ public class DtoBuilder
     private readonly Dictionary<Type, object> _probeObjects = new();
     private readonly Dictionary<Type, Dictionary<string, MethodInfo>> _helperMethods = new();
     private readonly Dictionary<object, ValueRequestEventHandler> _helperHandlers = new();
+
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Целевой объект для загрузки, если он не присвоен, то создаётся новый
+    /// </para>
+    /// <para xml:lang="en">
+    /// Target object for loading, if it is not assigned, then a new one is created
+    /// </para>
+    /// </summary>
     public object? Target { get; set; } = null;
 
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Инициализирует "лесом" <see cref="TypesForest"/>
+    /// </para>
+    /// <para xml:lang="en">
+    /// Initializes with "forest" <see cref="TypesForest"/>
+    /// </para>
+    /// </summary>
+    /// <param name="typesForest"></param>
+    /// <exception cref="ArgumentNullException">
+    /// <para xml:lang="ru">
+    /// Без "леса" ничего не построить
+    /// </para>
+    /// <para xml:lang="en">
+    /// Nothing can be built without a "forest"
+    /// </para>
+    /// </exception>
     public DtoBuilder(TypesForest typesForest)
     {
         _typesForest = typesForest ?? throw new ArgumentNullException(nameof(typesForest));
     }
 
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Строит объект с помощью объекта-хэлпера любого класса, в котором есть методы, имеющие сигнатуры специальных делегатов:
+    /// <see cref="BeforeOrAfterProcessor"/>, <see cref="NodeSetter"/>, <see cref="TerminalSetter"/> 
+    /// и помечены специальными атрибутами:
+    /// <see cref="SetupAttribute"/>, <see cref="BeforeAttribute"/>, <see cref="PathAttribute"/>, <see cref="AfterAttribute"/>, 
+    /// <see cref="ShutdownAttribute"/>
+    /// </para>
+    /// <para xml:lang="en">
+    /// Constructs an object using a helper object of any class that has methods that have special delegate signatures:
+    /// <see cref="BeforeOrAfterProcessor"/>, <see cref="NodeSetter"/>, <see cref="TerminalSetter"/>
+    /// and are marked with special attributes:
+    /// <see cref="SetupAttribute"/>, <see cref="BeforeAttribute"/>, <see cref="PathAttribute"/>, <see cref="AfterAttribute"/>,
+    /// <see cref="ShutdownAttribute"/>
+    /// </para>
+    /// </summary>
+    /// <typeparam name="T">
+    /// <para xml:lang="ru">
+    /// Интерфейс, применяемый для строительства
+    /// </para>
+    /// <para xml:lang="en">
+    /// Interface used for construction
+    /// </para>
+    /// </typeparam>
+    /// <param name="helper"></param>
+    /// <returns>
+    /// <para xml:lang="ru">
+    /// Готовый объект
+    /// </para>
+    /// <para xml:lang="en">
+    /// Ready object
+    /// </para>
+    /// </returns>
+    /// <exception cref="ArgumentNullException">
+    /// <para xml:lang="ru">
+    /// Без хэлпера не работает
+    /// </para>
+    /// <para xml:lang="en">
+    /// Doesn't work without a helper
+    /// </para>
+    /// </exception>
     public T? Build<T>(object helper) where T : class
     {
         if (helper is null)
@@ -52,6 +134,34 @@ public class DtoBuilder
         return result;
     }
 
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Строит объект с помощью хэндлера, имеющего сигнатуру делегата:
+    /// <see cref="ValueRequestEventHandler"/>
+    /// Перед вызовом следует подписаться на событие <see cref="ValueRequest"/>
+    /// </para>
+    /// <para xml:lang="en">
+    /// Builds an object using a handler that has a delegate signature:
+    /// <see cref="ValueRequestEventHandler"/>
+    /// Before calling, subscribe to the event <see cref="ValueRequest"/>
+    /// </para>
+    /// </summary>
+    /// <typeparam name="T">
+    /// <para xml:lang="ru">
+    /// Интерфейс, применяемый для строительства
+    /// </para>
+    /// <para xml:lang="en">
+    /// Interface used for construction
+    /// </para>
+    /// </typeparam>
+    /// <returns>
+    /// <para xml:lang="ru">
+    /// Готовый объект
+    /// </para>
+    /// <para xml:lang="en">
+    /// Ready object
+    /// </para>
+    /// </returns>
     public T? Build<T>() where T : class
     {
         T? result = null;
@@ -113,10 +223,7 @@ public class DtoBuilder
                             result = (T?)eventArgs.Result;
                         }
                         targets.Push(eventArgs.Result);
-                        if (!_probeObjects.TryAdd(request.PropertyNode.TypeNode.Type, target))
-                        {
-                            throw new Exception(IDontKnowWhy);
-                        }
+                        _probeObjects.TryAdd(request.PropertyNode.TypeNode.Type, target);
                     }
                     if (eventArgs.IsCommited)
                     {
@@ -137,10 +244,7 @@ public class DtoBuilder
                         key = request.PropertyNode.TypeNode.GetKey(targets.Peek()!);
                         if (_objectCache.TryGet(request.PropertyNode.TypeNode.Type, key, out object cachedObject))
                         {
-                            if (!_probeObjects.TryAdd(request.PropertyNode.TypeNode.Type, targets.Peek()!))
-                            {
-                                throw new Exception(IDontKnowWhy);
-                            }
+                            _probeObjects.TryAdd(request.PropertyNode.TypeNode.Type, targets.Peek()!);
                             targets.Pop();
                             targets.Push(cachedObject);
                             key = null;
@@ -177,6 +281,30 @@ public class DtoBuilder
         return result;
     }
 
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Генерирует скелет для хэндлера, соответствующего применённому интерфейсу
+    /// </para>
+    /// <para xml:lang="en">
+    /// Generates a skeleton for the handler corresponding to the applied interface
+    /// </para>
+    /// </summary>
+    /// <typeparam name="T">
+    /// <para xml:lang="ru">
+    /// Интерфейс, применяемый для генерации
+    /// </para>
+    /// <para xml:lang="en">
+    /// Interface used to generate
+    /// </para>
+    /// </typeparam>
+    /// <returns>
+    /// <para xml:lang="ru">
+    /// Исходный код, который можно скопировать и вставить в подходящее место
+    /// </para>
+    /// <para xml:lang="en">
+    /// Source code that can be copied and pasted to a suitable location
+    /// </para>
+    /// </returns>
     public string GenerateHandlerSkeleton<T>() where T : class
     {
         StringBuilder sb = new();
@@ -219,6 +347,30 @@ public class DtoBuilder
         return sb.ToString();
     }
 
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Генерирует скелет для хэлпера, соответствующего применённому интерфейсу
+    /// </para>
+    /// <para xml:lang="en">
+    /// Generates a skeleton for the helper corresponding to the applied interface
+    /// </para>
+    /// </summary>
+    /// <typeparam name="T">
+    /// <para xml:lang="ru">
+    /// Интерфейс, применяемый для генерации
+    /// </para>
+    /// <para xml:lang="en">
+    /// Interface used to generate
+    /// </para>
+    /// </typeparam>
+    /// <returns>
+    /// <para xml:lang="ru">
+    /// Исходный код, который можно скопировать и вставить в подходящее место
+    /// </para>
+    /// <para xml:lang="en">
+    /// Source code that can be copied and pasted to a suitable location
+    /// </para>
+    /// </returns>
     public string GenerateHelperSkeleton<T>() where T : class
     {
         StringBuilder sb = new();

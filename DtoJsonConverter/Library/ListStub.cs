@@ -16,11 +16,11 @@ public class ListStub<T>
     /// <summary>
     /// <para xml:lang="ru">
     /// Объект-заглушка для формального параметра  
-    /// <see cref="AsyncEnumerableJsonSerializer{T}.Write(System.Text.Json.Utf8JsonWriter, ListStub{T}, System.Text.Json.JsonSerializerOptions)"/>
+    /// <see cref="System.Text.Json.JsonSerializer{T}.Write(System.Text.Json.Utf8JsonWriter, ListStub{T}, System.Text.Json.JsonSerializerOptions)"/>
     /// </para>
     /// <para xml:lang="en">
     /// Stub object for formal parameter of 
-    /// <see cref="AsyncEnumerableJsonSerializer{T}.Write(System.Text.Json.Utf8JsonWriter, ListStub{T}, System.Text.Json.JsonSerializerOptions)"/>
+    /// <see cref="System.Text.Json.JsonSerializer{T}.Write(System.Text.Json.Utf8JsonWriter, ListStub{T}, System.Text.Json.JsonSerializerOptions)"/>
     /// </para>
     /// </summary>
     public static ListStub<T> Instance { get; private set; } = new();

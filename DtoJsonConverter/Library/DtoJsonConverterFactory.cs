@@ -15,7 +15,7 @@ namespace Net.Leksi.Dto;
 /// 2) повторное использование списка верхнего уровня с указанием, добавить в него новые элементы или
 /// перезаписать.
 /// </para>
-/// /// <para xml:lang="en">
+/// <para xml:lang="en">
 /// Manufacturing factory <see cref="JsonConverter"/> for special processing
 /// registered interfaces and <see cref="IList"/>'s of such elements.
 /// Special processing means:
@@ -90,11 +90,11 @@ public class DtoJsonConverterFactory : JsonConverterFactory
     /// <summary>
     /// <para xml:lang="ru">
     /// Значение свойства <c>true</c> указывает, что элемент null в списке верхнего уровня означает
-    /// окончание передачи серии данных (смотрите также <seealso cref="Net.Leksi.PartialLoader.PartialLoader{T}"/>)
+    /// окончание передачи серии данных (смотрите также <seealso cref="Net.Leksi.PartialLoader.PartialLoader{{T}}"/>)
     /// </para>
     /// <para xml:lang="en">
     /// The <c>true</c> property value indicates that the null element in the top-level list means
-    /// end of data series transfer (see also <seealso cref="Net.Leksi.PartialLoader.PartialLoader{T}"/>)
+    /// end of data series transfer (see also <seealso cref="Net.Leksi.PartialLoader.PartialLoader{{T}}"/>)
     /// </para>
     /// </summary>
     public bool UseEndOfDataNull
@@ -168,7 +168,7 @@ public class DtoJsonConverterFactory : JsonConverterFactory
         bool result = TypesForest.ServiceProvider.IsRegistered(typeToConvert);
         if (result)
         {
-            TypesForest.PlantTypeTree(typeToConvert);
+            TypesForest.GetTypeNode(typeToConvert);
         }
         return result;
     }

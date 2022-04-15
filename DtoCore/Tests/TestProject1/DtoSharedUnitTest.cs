@@ -54,6 +54,6 @@ public class DtoSharedUnitTest
 
         TypesForest tf = host.Services.GetRequiredService<TypesForest>();
 
-        tf.GetTypeNode<IRoute>();
+        tf.GetTypeNode(typeof(IRoute));
     }
 }
