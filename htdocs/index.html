@@ -44,6 +44,7 @@ body {
   <a href="#DtoKit">DtoKit</a>
   <a href="#class_tree">Дерево класса</a>
   <a href="#interface_tree">Дерево интерфейса</a>
+  <a href="#narrowing_interfaces">Сужающие интерфейсы</a>
 </div>
 
 <div class="main">
@@ -71,40 +72,40 @@ body {
         Для краткости приведём только основные свойства сущностей, хотя они могут содержать и методы, но в данном контексте это неважно.
     </p>
     <table>
-        <tr>
+        <tr class="line">
             <td>
                 <script src="https://gist.github.com/Leksiqq/211f5ebc4891cbdbb5c40818d9693bd4.js"></script>
             </td>
         </tr>
-        <tr>
+        <tr class="port">
             <td>
                 <script src="https://gist.github.com/Leksiqq/cb8d4965b5194be27f62a085f2f60f83.js"></script>
             </td>
         </tr>
-        <tr>
+        <tr class="vessel">
             <td>
                 <script src="https://gist.github.com/Leksiqq/95998716ee1cb4300b9a2bf7b7680c40.js"></script>
             </td>
         </tr>
-        <tr>
+        <tr class="route">
             <td>
                 <script src="https://gist.github.com/Leksiqq/39fdf7e304220cb9907d856d3bf7ea97.js"></script>
             </td>
         </tr>
-        <tr>
+        <tr class="shipcall">
             <td>
                 <script src="https://gist.github.com/Leksiqq/7fbfa0734962e83d6361fb46bf0df92a.js"></script>
             </td>
         </tr>
     </table>
     <p>
-        Для класса <code>ShipCall</code> имеем следующее дерево:
+        Для класса <code>ShipCall</code> имеем следующее дерево (имена узлов опущены для простоты восприятия):
     </p>
     <img src="class_tree.jpg"/>
     <a name="interface_tree"/>
     <h2>Дерево интерфейса</h2>
     <p>
-        Теперь мы можем разработать интерфейсы только для чтения, которые покрывают все свойства в наших классах предметной области и в рамках предметной области, то есть ключи БД нигде фигурировать не будут. 
+        Теперь мы можем разработать интерфейсы <b>только для чтения</b>, которые покрывают все свойства в наших классах предметной области и в рамках предметной области, то есть ключи БД нигде фигурировать не будут. 
         Заставим классы их реализовать явно, если потребуется, это не добавит никакой логики. 
         Мы будем редактировать классы, но это ни на что не повлияет, так как новые свойства будут лишь "псевдонимами" свойств класса. 
     </p>
@@ -116,7 +117,7 @@ body {
         Вот что получилось:
     </p>
     <table>
-        <tr>
+        <tr class="line">
             <td valign="top">
                 <script src="https://gist.github.com/Leksiqq/43c3b849d6213c5dc841add8a13c371f.js"></script>
             </td>
@@ -124,7 +125,7 @@ body {
                 <script src="https://gist.github.com/Leksiqq/d7cddf8a4c54d9ebdb850a6a9440b2de.js"></script>
             </td>
         </tr>
-        <tr>
+        <tr class="port">
             <td valign="top">
                 <script src="https://gist.github.com/Leksiqq/51359b051fafdda7c7f360d64327cc77.js"></script>
             </td>
@@ -132,7 +133,7 @@ body {
                 <script src="https://gist.github.com/Leksiqq/3595db898dcab215f8cb1d0cf28e9443.js"></script>
             </td>
         </tr>
-        <tr>
+        <tr class="vessel">
             <td valign="top">
                 <script src="https://gist.github.com/Leksiqq/c2d9cb3c4ed84130b778f2c54ba051e7.js"></script>
             </td>
@@ -140,7 +141,7 @@ body {
                 <script src="https://gist.github.com/Leksiqq/17341a04e2f6d1a917911327ce1b1ca4.js"></script>
             </td>
         </tr>
-        <tr>
+        <tr class="route">
             <td valign="top">
                 <script src="https://gist.github.com/Leksiqq/707e93d8da196fb956a5343379768fd1.js"></script>
             </td>
@@ -148,7 +149,7 @@ body {
                 <script src="https://gist.github.com/Leksiqq/207e4cf33c0e0e4c3f60e2ba8d1705fb.js"></script>
             </td>
         </tr>
-        <tr>
+        <tr class="shipcall">
             <td valign="top">
                 <script src="https://gist.github.com/Leksiqq/c999e07c6071db04031ea33debf48318.js"></script>
             </td>
@@ -158,11 +159,67 @@ body {
         </tr>
     </table>
     <p>
-        Очевидно, по интуитивно понятным образом модифицированному определению для дерева классов, строится дерево интерфейса.
+        Очевидно, по интуитивно понятным образом модифицированному определению для дерева классов строится дерево интерфейса.
     </p>
     <p>
-        Например, дерево интерфейса <code>IShipCall</code> выглядит так:
+        Например, дерево интерфейса <code>IShipCall</code> выглядит так  (имена узлов опущены для простоты восприятия):
     </p>
+    <img src="interface_tree.jpg"/>
+    <a name="narrowing_interfaces"/>
+    <h2>Сужающие интерфейсы</h2>
+    <p>
+        Предположим, мы хотим вывести список судозаходов клиенту в виде таблицы. Целиком нам объекты не понадобятся, но и не хочется делать отдельный класс для 
+        строки таблицы, так как его "физический" смысл будет неясным.
+    </p>
+    <p>
+        Пусть нам нужно вывести в таблицу название линии, название парохода, название порта прибытия/отхода, номер вояжа, время прибытия/убытия, дополнительную информацию. 
+        Тогда мы делаем новое дерево 
+        интерфейсов, которое содержит только эти данные:
+    </p>
+    <table>
+        <tr class="line">
+            <td valign="top">
+                <script src="https://gist.github.com/Leksiqq/43c3b849d6213c5dc841add8a13c371f.js"></script>
+            </td>
+            <td valign="top">
+                <script src="https://gist.github.com/Leksiqq/d7cddf8a4c54d9ebdb850a6a9440b2de.js"></script>
+            </td>
+        </tr>
+        <tr class="port">
+            <td valign="top">
+                <script src="https://gist.github.com/Leksiqq/51359b051fafdda7c7f360d64327cc77.js"></script>
+            </td>
+            <td valign="top">
+                <script src="https://gist.github.com/Leksiqq/3595db898dcab215f8cb1d0cf28e9443.js"></script>
+            </td>
+        </tr>
+        <tr class="vessel">
+            <td valign="top">
+                <script src="https://gist.github.com/Leksiqq/18645bb895641bb9555f19991e94cdd4.js"></script>
+            </td>
+            <td valign="top">
+                <script src="https://gist.github.com/Leksiqq/17341a04e2f6d1a917911327ce1b1ca4.js"></script>
+                <script src="https://gist.github.com/Leksiqq/3747db0c0015dcb4fad54495ae6a4b0a.js"></script>
+            </td>
+        </tr>
+        <tr class="route">
+            <td valign="top">
+                <script src="https://gist.github.com/Leksiqq/5464b4498c740be6856b28e8d2f742d5.js"></script>
+            </td>
+            <td valign="top">
+                <script src="https://gist.github.com/Leksiqq/207e4cf33c0e0e4c3f60e2ba8d1705fb.js"></script>
+                <script src="https://gist.github.com/Leksiqq/a874801805c0081a4edc66eae1e893fe.js"></script>
+            </td>
+        </tr>
+        <tr class="shipcall">
+            <td valign="top">
+                <script src="https://gist.github.com/Leksiqq/c999e07c6071db04031ea33debf48318.js"></script>
+            </td>
+            <td valign="top">
+                <script src="https://gist.github.com/Leksiqq/6b5f64f73a1f6e5a6805e1fd40742da9.js"></script>
+            </td>
+        </tr>
+    </table>
 </div>
    
 </body>

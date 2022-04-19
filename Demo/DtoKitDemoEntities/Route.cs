@@ -3,7 +3,7 @@ using Net.Leksi.Dto;
 
 namespace DtoKitDemoEntities;
 
-public class Route: IRoute
+public class Route: IRoute, IRouteForShipCallList
 {
     [Key]
     public int ID_ROUTE { get; set; }
@@ -15,5 +15,9 @@ public class Route: IRoute
 
     ILine IRoute.Line => Line;
 
+    ILine IRouteForShipCallList.Line => Line;
+
     IVessel IRoute.Vessel => Vessel;
+
+    IVesselForShipCallList IRouteForShipCallList.Vessel => Vessel;
 }

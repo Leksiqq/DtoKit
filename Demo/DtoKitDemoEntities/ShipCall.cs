@@ -3,7 +3,7 @@ using Net.Leksi.Dto;
 
 namespace DtoKitDemoEntities;
 
-public class ShipCall: IShipCall
+public class ShipCall: IShipCall, IShipCallForList
 {
     [Key]
     public int ID_SHIPCALL { get; set; }
@@ -22,5 +22,11 @@ public class ShipCall: IShipCall
 
     public string AdditionalInfo { get; set; }
     IRoute IShipCall.Route => Route;
+
+    IRouteForShipCallList IShipCallForList.Route => Route;
+;
+
     IPort IShipCall.Port => Port;
+
+    IPort IShipCallForList.Port => Port;
 }

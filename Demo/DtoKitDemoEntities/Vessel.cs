@@ -3,7 +3,7 @@ using Net.Leksi.Dto;
 
 namespace DtoKitDemoEntities;
 
-public class Vessel: IVessel
+public class Vessel: IVessel, IVesselForShipCallList
 {
     [Key]
     public string ID_VESSEL { get; set; }
