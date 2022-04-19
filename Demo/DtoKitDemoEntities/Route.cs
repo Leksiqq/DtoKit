@@ -1,8 +1,9 @@
-﻿using Net.Leksi.Dto;
+﻿using DtoKitDemoContract;
+using Net.Leksi.Dto;
 
 namespace DtoKitDemoEntities;
 
-public class Route
+public class Route: IRoute
 {
     [Key]
     public int ID_ROUTE { get; set; }
@@ -11,4 +12,8 @@ public class Route
     public Line Line { get; set; }
 
     public Vessel Vessel { get; set; }
+
+    ILine IRoute.Line => Line;
+
+    IVessel IRoute.Vessel => Vessel;
 }

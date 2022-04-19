@@ -1,9 +1,10 @@
 ﻿
+using DtoKitDemoContract;
 using Net.Leksi.Dto;
 
 namespace DtoKitDemoEntities;
 
-public class Line
+public class Line: ILine
 {
     [Key]
     public string ID_LINE { get; set; }

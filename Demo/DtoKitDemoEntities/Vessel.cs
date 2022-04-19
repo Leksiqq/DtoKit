@@ -1,8 +1,9 @@
-﻿using Net.Leksi.Dto;
+﻿using DtoKitDemoContract;
+using Net.Leksi.Dto;
 
 namespace DtoKitDemoEntities;
 
-public class Vessel
+public class Vessel: IVessel
 {
     [Key]
     public string ID_VESSEL { get; set; }
@@ -18,16 +19,9 @@ public class Vessel
 
     public double Netto { get; set; }
 
-    public double LineMeters { get; set; }
-
-    public string Description { get; set; }
-
-    public int RiffCount { get; set; }
-
-    public bool IsOcean { get; set; }
-
     public string CallSign { get; set; }
 
     public string Name { get; set; }
 
+    IPort IVessel.Port => Port;
 }

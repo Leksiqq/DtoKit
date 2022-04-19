@@ -1,7 +1,12 @@
-﻿namespace DtoKitDemoEntities;
+﻿using DtoKitDemoContract;
+using Net.Leksi.Dto;
 
-public class Port
+namespace DtoKitDemoEntities;
+
+public class Port : IPort
 {
+    [Key]
     public string ID_PORT { get; set; }
 
     public string Name { get; set; }
+}
