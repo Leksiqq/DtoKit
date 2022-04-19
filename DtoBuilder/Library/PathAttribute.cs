@@ -24,31 +24,15 @@ public class PathAttribute: Attribute
     public string Path { get; init; }
     /// <summary>
     /// <para xml:lang="ru">
-    /// Тип соответствующего делегата <see cref="NodeSetter"/> или <see cref="TerminalSetter"/> 
-    /// для контроля, что разработчик понимает, какой тип вершины он обрабатывает.
+    /// Инициализирует абсолютным путём от корня дерева объекта
     /// </para>
     /// <para xml:lang="en">
-    /// Absolute path from the root of the object tree.
-    /// </para>
-    /// <para xml:lang="en">
-    /// The type of the corresponding delegate <see cref="NodeSetter"/> or <see cref="TerminalSetter"/>
-    /// to control that the developer understands what type of vertex he is processing.
-    /// </para>
-    /// </summary>
-    public Type DelegateType { get; init; }
-    /// <summary>
-    /// <para xml:lang="ru">
-    /// Инициализирует атрибут путём и типом делегата
-    /// </para>
-    /// <para xml:lang="en">
-    /// Initializes the attribute with the path and delegate's type
+    /// Initializes with an absolute path from the root of the object tree
     /// </para>
     /// </summary>
     /// <param name="path"></param>
-    /// <param name="delegateType"></param>
-    public PathAttribute(string path, Type delegateType)
+    public PathAttribute(string path)
     {
         Path = path;
-        DelegateType = delegateType;
     }
 }

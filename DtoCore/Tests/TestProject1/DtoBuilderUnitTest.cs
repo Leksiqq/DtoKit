@@ -63,7 +63,7 @@ public class DtoBuilderUnitTest
         dtoBuilder.ValueRequest += args =>
         {
             Trace.WriteLine($"{args.Path}{string.Join("", Enumerable.Range(0, tabPos - args.Path.Length).Select(v => " "))}({args.Kind})");
-            if (args.Kind is ValueRequestKind.Terminal)
+            if (args.Kind is ValueRequestKind.Leaf)
             {
                 args.Commit();
             }
@@ -196,19 +196,19 @@ public class DtoBuilderUnitTest
     internal class Helper1
     {
 
-        [Path("/", typeof(NodeSetter))]
-        object Apache(object value, bool isNullable, ref bool isCommited)
+        [Path("/")]
+        object Apache(string path, object value, bool isNullable, ref bool isCommited)
         {
             //isCommited = true;
             return new Line {ID_LINE = "NTL", Name = "NTL" };
         }
-        object Nginx(object value)
+        object Nginx(string path, object value)
         {
             return "1";
         }
-        [Path("/ID_LINE", typeof(TerminalSetter))]
-        [Path("/Name", typeof(TerminalSetter))]
-        object Netscape(object value)
+        [Path("/ID_LINE")]
+        [Path("/Name")]
+        object Netscape(string path, object value)
         {
             return "TRE";
         }
@@ -261,74 +261,74 @@ public class DtoBuilderUnitTest
 
     class TravelHelper
     {
-        [Path("/ArrivalShipCall", typeof(NodeSetter))]
-        public object Set_ArrivalShipCall(object value, bool isNullable, ref bool isCommited)
+        [Path("/ArrivalShipCall")]
+        public object Set_ArrivalShipCall(string path, object value, bool isNullable, ref bool isCommited)
         {
             return null;
         }
 
-        [Path("/ArrivalShipCall/ID_LINE", typeof(TerminalSetter))]
-        public object Set_ArrivalShipCall_ID_LINE(object value)
+        [Path("/ArrivalShipCall/ID_LINE")]
+        public object Set_ArrivalShipCall_ID_LINE(string path, object value)
         {
             throw new NotImplementedException();
         }
 
-        [Path("/ArrivalShipCall/ID_ROUTE", typeof(TerminalSetter))]
-        public object Set_ArrivalShipCall_ID_ROUTE(object value)
+        [Path("/ArrivalShipCall/ID_ROUTE")]
+        public object Set_ArrivalShipCall_ID_ROUTE(string path, object value)
         {
             throw new NotImplementedException();
         }
 
-        [Path("/ArrivalShipCall/ActualArrival", typeof(TerminalSetter))]
-        public object Set_ArrivalShipCall_ActualArrival(object value)
+        [Path("/ArrivalShipCall/ActualArrival")]
+        public object Set_ArrivalShipCall_ActualArrival(string path, object value)
         {
             throw new NotImplementedException();
         }
 
-        [Path("/ArrivalShipCall/Location", typeof(NodeSetter))]
-        public object Set_ArrivalShipCall_Location(object value, bool isNullable, ref bool isCommited)
+        [Path("/ArrivalShipCall/Location")]
+        public object Set_ArrivalShipCall_Location(string path, object value, bool isNullable, ref bool isCommited)
         {
             throw new NotImplementedException();
         }
 
-        [Path("/ArrivalShipCall/Location/ID_LOCATION", typeof(TerminalSetter))]
-        public object Set_ArrivalShipCall_Location_ID_LOCATION(object value)
+        [Path("/ArrivalShipCall/Location/ID_LOCATION")]
+        public object Set_ArrivalShipCall_Location_ID_LOCATION(string path, object value)
         {
             throw new NotImplementedException();
         }
 
-        [Path("/ArrivalShipCall/Location/Name", typeof(TerminalSetter))]
-        public object Set_ArrivalShipCall_Location_Name(object value)
+        [Path("/ArrivalShipCall/Location/Name")]
+        public object Set_ArrivalShipCall_Location_Name(string path, object value)
         {
             throw new NotImplementedException();
         }
 
-        [Path("/ArrivalShipCall/Location/Type", typeof(TerminalSetter))]
-        public object Set_ArrivalShipCall_Location_Type(object value)
+        [Path("/ArrivalShipCall/Location/Type")]
+        public object Set_ArrivalShipCall_Location_Type(string path, object value)
         {
             throw new NotImplementedException();
         }
 
-        [Path("/ArrivalShipCall/Location/Unlocode", typeof(TerminalSetter))]
-        public object Set_ArrivalShipCall_Location_Unlocode(object value)
+        [Path("/ArrivalShipCall/Location/Unlocode")]
+        public object Set_ArrivalShipCall_Location_Unlocode(string path, object value)
         {
             throw new NotImplementedException();
         }
 
-        [Path("/DepartureShipCall", typeof(NodeSetter))]
-        public object Set_DepartureShipCall(object value, bool isNullable, ref bool isCommited)
+        [Path("/DepartureShipCall")]
+        public object Set_DepartureShipCall(string path, object value, bool isNullable, ref bool isCommited)
         {
             throw new NotImplementedException();
         }
 
-        [Path("/DepartureShipCall/ID_LINE", typeof(TerminalSetter))]
-        public object Set_DepartureShipCall_ID_LINE(object value)
+        [Path("/DepartureShipCall/ID_LINE")]
+        public object Set_DepartureShipCall_ID_LINE(string path, object value)
         {
             throw new NotImplementedException();
         }
 
-        [Path("/DepartureShipCall/ID_ROUTE", typeof(TerminalSetter))]
-        public object Set_DepartureShipCall_ID_ROUTE(object value)
+        [Path("/DepartureShipCall/ID_ROUTE")]
+        public object Set_DepartureShipCall_ID_ROUTE(string path, object value)
         {
             throw new NotImplementedException();
         }

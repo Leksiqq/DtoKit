@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using System.Collections;
-using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -29,18 +28,37 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
     private readonly DtoJsonConverterFactory _factory;
     private ObjectCache? _objectCache = null;
 
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Инициализируется создавшей фабрикой. Фабрика служит средством передачи информации между конвертерами
+    /// </para>
+    /// <para xml:lang="en">
+     /// Initialized by the creating factory. The factory serves as a means of transferring information between converters
+     /// </para>
+    /// </summary>
+    /// <param name="factory"></param>
     public DtoConverter(DtoJsonConverterFactory factory)
     {
         _factory = factory;
-        if (_factory.WithKeyOnlyForRepeated)
+        if (_factory.PropertiesProcessingKind is PropertiesProcessingKind.OnlyKeysForRepeats)
         {
             _objectCache = new();
         }
     }
 
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Очищает кеш, созданный для учёта повторяющихся объектов при возникновении соотвествующего события.
+    /// </para>
+    /// <para xml:lang="en">
+    /// Clears the cache created to account for duplicate objects when the corresponding event occurs.
+    /// </para>
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="args"></param>
     public void OnObjectCachesClear(object? sender, EventArgs args)
     {
-        _objectCache.Clear();
+        _objectCache?.Clear();
     }
 
     #region Реализация JsonConverter<T>
@@ -82,7 +100,7 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
             }
             if (!itemAssigned)
             {
-                if (_factory.ObjectsPool.TryGetValue(typeof(T), out List<object> pool) && pool.Count > 0)
+                if (_factory.ObjectsPool.TryGetValue(typeof(T), out List<object>? pool) && pool.Count > 0)
                 {
                     item = (T)pool[0];
                     pool.RemoveAt(0);
@@ -104,7 +122,7 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
                 {
                     if (key is { })
                     {
-                        _objectCache.Add(typeNode.Type, key, item);
+                        _objectCache.Add(typeNode.Type, key, item!);
                     }
                     return item;
                 }
@@ -123,23 +141,25 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
 
                 if (propertyName.StartsWith(DollarSign))
                 {
-                    JsonElement obj = (JsonElement)JsonSerializer.Deserialize<object>(ref reader);
-                    if (propertyName == KeyOnlyPropertyName && obj.ValueKind is JsonValueKind.True)
+                    if((JsonElement?)JsonSerializer.Deserialize<object>(ref reader) is JsonElement obj)
                     {
-                        if (_objectCache.TryGet(typeNode.Type, key, out object cachedObject))
+                        if (propertyName == KeyOnlyPropertyName && obj.ValueKind is JsonValueKind.True)
                         {
-                            if (_factory.ObjectsPool.TryGetValue(typeof(T), out List<object> pool))
+                            if (_objectCache.TryGet(typeNode.Type, key!, out object? cachedObject))
                             {
-                                pool.Add(item);
+                                if (_factory.ObjectsPool.TryGetValue(typeof(T), out List<object>? pool))
+                                {
+                                    pool.Add(item);
+                                }
+                                item = (T)cachedObject!;
+                                key = null;
                             }
-                            item = (T)cachedObject;
-                            key = null;
                         }
                     }
                 }
                 else
                 {
-                    PropertyNode propertyNode = _factory.TypesForest.GetPropertyNode(typeNode, propertyName);
+                    PropertyNode? propertyNode = _factory.TypesForest.FindPropertyNode(typeNode, propertyName);
 
                     if (propertyNode is null)
                     {
@@ -148,7 +168,7 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
 
                     bool propertyValueAssigned = false;
 
-                    if (propertyNode.PropertyInfo.PropertyType.IsEnum)
+                    if (propertyNode.PropertyInfo?.PropertyType.IsEnum ?? false)
                     {
                         reader.Read();
                         propertyNode.PropertyInfo.SetValue(item, Enum.Parse(propertyNode.PropertyInfo.PropertyType,
@@ -165,15 +185,15 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
                         Type elementType = propertyNode.TypeNode.Type.GenericTypeArguments[0];
                         if (listType.IsAssignableFrom(propertyNode.TypeNode.Type))
                         {
-                            IList? list = (IList)propertyNode.PropertyInfo.GetValue(item)!;
+                            IList? list = (IList)propertyNode.PropertyInfo?.GetValue(item)!;
                             if (list is null)
                             {
                                 list = (IList)JsonSerializer.Deserialize(ref reader,
                                     propertyNode.TypeNode.Type, options)!;
 
-                                if (propertyNode.PropertyInfo.GetValue(item) != list)
+                                if (propertyNode.PropertyInfo?.GetValue(item) != list)
                                 {
-                                    propertyNode.PropertyInfo.SetValue(item, list);
+                                    propertyNode.PropertyInfo?.SetValue(item, list);
                                 }
                                 propertyValueAssigned = true;
                             }
@@ -182,7 +202,7 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
                                 reader.Read();
                                 if (reader.TokenType == JsonTokenType.Null)
                                 {
-                                    propertyNode.PropertyInfo.SetValue(item, null);
+                                    propertyNode.PropertyInfo?.SetValue(item, null);
                                     propertyValueAssigned = true;
                                 }
                                 else
@@ -199,7 +219,7 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
                                                 {
                                                     _factory.Target = list[i];
                                                 }
-                                                else if (_factory.ObjectsPool.TryGetValue(elementType, out List<object> pool) && pool.Count > 0)
+                                                else if (_factory.ObjectsPool.TryGetValue(elementType, out List<object>? pool) && pool.Count > 0)
                                                 {
                                                     _factory.Target = pool[0];
                                                     pool.RemoveAt(0);
@@ -224,7 +244,10 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
                                         }
                                         while (i < list.Count)
                                         {
-                                            _factory.ObjectsPool[elementType].Add(list[i]);
+                                            if(list[i] is { })
+                                            {
+                                                _factory.ObjectsPool[elementType].Add(list[i]!);
+                                            }
                                             list.RemoveAt(i);
                                         }
                                         propertyValueAssigned = true;
@@ -241,19 +264,19 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
                     if (
                         !propertyValueAssigned
                         && _factory.TypesForest.ServiceProvider.Select(sd => sd.ServiceType)
-                            .Any(type => type.IsAssignableFrom(propertyNode.PropertyInfo.PropertyType)))
+                            .Any(type => type.IsAssignableFrom(propertyNode.PropertyInfo?.PropertyType)))
                     {
-                        _factory.Target = propertyNode.PropertyInfo.GetValue(item);
+                        _factory.Target = propertyNode.PropertyInfo?.GetValue(item);
                     }
                     if (!propertyValueAssigned)
                     {
                         object? value = JsonSerializer.Deserialize(ref reader, propertyNode.TypeNode.Type, options);
-                        object? prevValue = propertyNode.PropertyInfo.GetValue(item);
+                        object? prevValue = propertyNode.PropertyInfo?.GetValue(item);
                         if (prevValue != value)
                         {
                             if (value is null)
                             {
-                                if (!_factory.ObjectsPool.ContainsKey(propertyNode.PropertyInfo.PropertyType))
+                                if (propertyNode.PropertyInfo is { } && !_factory.ObjectsPool.ContainsKey(propertyNode.PropertyInfo.PropertyType))
                                 {
                                     _factory.ObjectsPool[prevValue!.GetType()] = new List<object>() { prevValue };
                                 }
@@ -262,7 +285,7 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
                                     _factory.ObjectsPool[prevValue!.GetType()].Add(prevValue);
                                 }
                             }
-                            propertyNode.PropertyInfo.SetValue(item, value);
+                            propertyNode.PropertyInfo?.SetValue(item, value);
                         }
                         propertyValueAssigned = true;
                     }
@@ -289,26 +312,6 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
         else
         {
 
-            if (typeof(T).IsGenericType && typeof(T).GetGenericTypeDefinition() == typeof(KeyStub<>))
-            {
-                if (_factory.KeyStubDetected)
-                {
-                    throw new InvalidOperationException($"Nested {typeof(KeyStub<T>)} is not allowed");
-                }
-                _factory.KeyStubDetected = true;
-                Type actualType = typeof(T).GetGenericArguments()[0];
-                try
-                {
-                    object? sourceValue = typeof(T).GetProperty("Source")!.GetValue(value);
-                    JsonSerializer.Serialize(writer, sourceValue, actualType, options);
-                    return;
-                }
-                finally
-                {
-                    _factory.KeyStubDetected = false;
-                }
-            }
-
             TypeNode typeNode = _factory.TypesForest.GetTypeNode(typeof(T));
 
             writer.WriteStartObject();
@@ -323,7 +326,7 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
             {
                 foreach (PropertyNode propertyNode in typeNode.ChildNodes)
                 {
-                    writer.WritePropertyName(propertyNode.Name);
+                    writer.WritePropertyName(propertyNode.Name!);
                     if (propertyNode.PropertyInfo!.PropertyType.IsEnum)
                     {
                         writer.WriteStringValue(propertyNode.PropertyInfo.GetValue(value)?.ToString());
@@ -333,12 +336,12 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
                         JsonSerializer.Serialize(writer, propertyNode.PropertyInfo.GetValue(value), propertyNode.TypeNode.Type, options);
                     }
                     propertyPosition++;
-                    if (propertyPosition == typeNode.KeysCount)
+                    if (propertyPosition > 0 && propertyPosition == typeNode.KeysCount)
                     {
-                        if (_factory.WithKeyOnlyForRepeated)
+                        if (_factory.PropertiesProcessingKind is PropertiesProcessingKind.OnlyKeysForRepeats)
                         {
                             key = typeNode.GetKey(value);
-                            if (_objectCache.TryGet(typeNode.Type, key, out object cachedObject))
+                            if (_objectCache!.TryGet(typeNode.Type, key!, out object? cachedObject))
                             {
                                 key = null;
                                 writer.WritePropertyName(KeyOnlyPropertyName);
@@ -346,7 +349,7 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
                                 break;
                             }
                         }
-                        else if (_factory.KeyStubDetected)
+                        else if (_factory.PropertiesProcessingKind is PropertiesProcessingKind.OnlyKeys)
                         {
                             writer.WritePropertyName(KeyOnlyPropertyName);
                             writer.WriteBooleanValue(true);
@@ -356,9 +359,9 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
                     }
                 }
             }
-            if (_factory.WithKeyOnlyForRepeated && key is { })
+            if (_factory.PropertiesProcessingKind is PropertiesProcessingKind.OnlyKeysForRepeats && key is { })
             {
-                _objectCache.Add(typeNode.Type, key, value);
+                _objectCache!.Add(typeNode.Type, key, value);
             }
             writer.WriteEndObject();
         }

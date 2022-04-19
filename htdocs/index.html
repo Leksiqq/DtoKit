@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+        <title>Документация по DtoKit</title>
+        <link rel="stylesheet" href="1.css"/>
+    </head>
+    <body>
+        <h1>DtoKit</h1>
+        <a href="index_en.html">In English</a>
+        
+        <p>
+            Библиотека <code>DtoKit</code> предназначена для предотвращения зависимости модели и представления приложения, как серверной, так и клиентской частей, 
+            от конкретной реализации классов объектов предметной области. В то же время, её использование позволит избежать переноса данных между уровнями приложения
+            с помощью Data Transfer Objects (DTO) или Plain Old CLR Object (POCO). Сказанное относится к построению объектов предметной области, их сериализации в JSON и
+            десериализации из JSON для взаимодействия между клиентом и сервером. 
+        </p>
+        <h2>Дерево класса</h2>
+
+        <p class="definition">
+            <b>Деревом класса</b> из предметной области будем называть связный ациклический граф (собственно, дерево), корнем которого является рассматриваемый класс,
+            узлами - агрегированные классы из предметной области, листьями - открытые для записи свойства.
+        </p>
+        <p>
+            Рассмотрим пример из предметной области, связанной с расписанием движения морских судов.
+        </p>
+        <p>
+            Для краткости приведём только основные свойства сущностей, хотя они могут содержать и методы, но в данном контексте это неважно.
+        </p>
+        <table>
+            <tr>
+                <td>
+                    <script src="https://gist.github.com/Leksiqq/211f5ebc4891cbdbb5c40818d9693bd4.js"></script>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <script src="https://gist.github.com/Leksiqq/95998716ee1cb4300b9a2bf7b7680c40.js"></script>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <script src="https://gist.github.com/Leksiqq/39fdf7e304220cb9907d856d3bf7ea97.js"></script>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <script src="https://gist.github.com/Leksiqq/cb8d4965b5194be27f62a085f2f60f83.js"></script>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <script src="https://gist.github.com/Leksiqq/7fbfa0734962e83d6361fb46bf0df92a.js"></script>
+                </td>
+            </tr>
+        </table>
+        <p>
+            Для класса <code>ShipCall</code> имеем следующее дерево:
+        </p>
+    </body>
+</html>

@@ -1,26 +1,60 @@
 ﻿namespace Net.Leksi.Dto;
 
+/// <summary>
+/// <para xml:lang="ru">
+/// Потомок <see cref="EventArgs"/>, для передачи в <see cref="ValueRequestEventHandler"/>
+/// </para>
+/// <para xml:lang="en">
+/// Child of <see cref="EventArgs"/>, to be passed to <see cref="ValueRequestEventHandler"/>
+/// </para>
+/// </summary>
 public class ValueRequestEventArgs : EventArgs
 {
     private PropertyNode _propertyNode = null!;
     private string _path = null!;
     private object _target = null!;
-    private object? _result;
     private bool _isReset = false;
 
-    internal PropertyNode PropertyNode => _propertyNode;
-
-    internal object? SuggestedValue { get; set; }
-
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Сигнализирует, что было присвоено значение <code>null</code>
+    /// </para>
+    /// <para xml:lang="en">
+    /// Signals that <code>null</code> has been assigned
+    /// </para>
+    /// </summary>
     internal bool IsReset => _isReset;
 
-    internal object? Result => _result;
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Инициализирует текущий аргумент
+    /// </para>
+    /// <para xml:lang="en">
+    /// Initializes the current argument
+    /// </para>
+    /// </summary>
+    internal void Init(PropertyNode propertyNode, object target, string path)
+    {
+        _propertyNode = propertyNode;
+        _path = path;
+        _target = target;
+        IsCommited = false;
+        _isReset = false;
+    }
 
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Значение текущего узла или листа дерева объекта
+    /// </para>
+    /// <para xml:lang="en">
+    /// The value of the current node or leaf of the object tree
+    /// </para>
+    /// </summary>
     public object? Value
     {
         get
         {
-            return (Kind is ValueRequestKind.Terminal) ? _propertyNode.PropertyInfo?.GetValue(_target) : _target;
+            return (IsLeaf) ? _propertyNode.PropertyInfo?.GetValue(_target) : (_isReset ? null : _target);
         }
         set
         {
@@ -28,22 +62,21 @@ public class ValueRequestEventArgs : EventArgs
             {
                 throw new InvalidOperationException("Request is already commited.");
             }
-            if (Kind is ValueRequestKind.NotNullableNode)
+            if(!IsNullable && value is null)
             {
-                if (value is null)
-                {
-                    throw new InvalidOperationException("At NotNullableNode request null can not be assigned.");
-                }
-                if(!object.ReferenceEquals(value, _target))
-                {
-                    _result = value;
-                }
+                throw new InvalidOperationException($"At not nullable request \"{ Path }\" null can not be assigned.");
             }
-            else if (Kind is ValueRequestKind.NullableNode)
+            if (!IsLeaf)
             {
-                _result = value;
-                _isReset = value is null;
-                IsCommited = value is null;
+                if(IsNullable)
+                {
+                    _isReset = value is null;
+                    IsCommited = value is null;
+                }
+                if (!_isReset && !object.ReferenceEquals(value, _target))
+                {
+                    _target = value!;
+                }
             }
             else
             {
@@ -52,40 +85,74 @@ public class ValueRequestEventArgs : EventArgs
         }
     }
 
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Указывает, принимает ли соответствующее свойство значения <code>null</code>
+    /// </para>
+    /// <para xml:lang="en">
+    /// Indicates whether the corresponding property accepts <code>null</code> values
+    /// </para>
+    /// </summary>
+    public bool IsNullable => _propertyNode.IsNullable;
+
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Указывает, является ли данный узел листом
+    /// </para>
+    /// <para xml:lang="en">
+    /// Indicates if this node is a leaf
+    /// </para>
+    /// </summary>
+    public bool IsLeaf => _propertyNode.IsLeaf;
+
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Абсолютный путь от корня дерева объекта
+    /// </para>
+    /// <para xml:lang="en">
+    /// Absolute path from the root of the object tree
+    /// </para>
+    /// </summary>
     public string Path => _path;
 
-    public ValueRequestKind Kind
-    {
-        get
-        {
-            if (_propertyNode.PropertyInfo is null || (!_propertyNode.IsLeaf && !_propertyNode.IsNullable))
-            {
-                return ValueRequestKind.NotNullableNode;
-            }
-            if (!_propertyNode.IsLeaf)
-            {
-                return ValueRequestKind.NullableNode;
-            }
-            return ValueRequestKind.Terminal;
-        }
-    }
-
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Тип узла дерева применённого интерфейса, соответствующего текущему узлу дерева объекта
+    /// </para>
+    /// <para xml:lang="en">
+    /// The type of the tree node of the applied interface corresponding to the current tree node of the object
+    /// </para>
+    /// </summary>
     public Type NominalType => _propertyNode.TypeNode.Type;
-    public Type ActualType => _propertyNode.PropertyInfo?.PropertyType ?? _target?.GetType();
 
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Тип текущего узла дерева объекта
+    /// </para>
+    /// <para xml:lang="en">
+    /// Type of the current node of the object tree
+    /// </para>
+    /// </summary>
+    public Type ActualType => _propertyNode.PropertyInfo?.PropertyType ?? _target.GetType();
+
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Сигнализирует, что текущий узел дерева объекта был завершён
+    /// </para>
+    /// <para xml:lang="en">
+    /// Signals that the current object tree node has been commited
+    /// </para>
+    /// </summary>
     public bool IsCommited { get; private set; } = false;
 
-
-    internal void Init(PropertyNode propertyNode, object target, string path)
-    {
-        _result = null;
-        _propertyNode = propertyNode;
-        _path = path;
-        _target = target;
-        IsCommited = false;
-        _isReset = false;
-    }
-
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Завершает текущий узел дерева объекта
+    /// </para>
+    /// <para xml:lang="en">
+    /// Commits the current node of the object tree
+    /// </para>
+    /// </summary>
     public void Commit()
     {
         if (IsCommited)

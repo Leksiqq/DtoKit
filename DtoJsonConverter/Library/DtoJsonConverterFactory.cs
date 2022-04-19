@@ -36,7 +36,7 @@ public class DtoJsonConverterFactory : JsonConverterFactory
     private bool _used = false;
     private bool _useEndOfDataNull = true;
     private bool _withMagic = false;
-    private bool _withOnlyKeysForRepeated = false;
+    private PropertiesProcessingKind _propertiesProcessingKind = PropertiesProcessingKind.OnlyKeysForRepeats;
 
     internal TypesForest TypesForest { get; init; }
 
@@ -85,16 +85,14 @@ public class DtoJsonConverterFactory : JsonConverterFactory
         }
     }
 
-    internal bool KeyStubDetected { get; set; } = false;
-
     /// <summary>
     /// <para xml:lang="ru">
     /// Значение свойства <c>true</c> указывает, что элемент null в списке верхнего уровня означает
-    /// окончание передачи серии данных (смотрите также <seealso cref="Net.Leksi.PartialLoader.PartialLoader{{T}}"/>)
+    /// окончание передачи серии данных (смотрите также Net.Leksi.PartialLoader.PartialLoader&lt;&gt;)
     /// </para>
     /// <para xml:lang="en">
     /// The <c>true</c> property value indicates that the null element in the top-level list means
-    /// end of data series transfer (see also <seealso cref="Net.Leksi.PartialLoader.PartialLoader{{T}}"/>)
+    /// end of data series transfer (see also Net.Leksi.PartialLoader.PartialLoader&lt;&gt;)
     /// </para>
     /// </summary>
     public bool UseEndOfDataNull
@@ -117,6 +115,16 @@ public class DtoJsonConverterFactory : JsonConverterFactory
     /// </summary>
     public bool IsEndOfData { get; internal set; }
 
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Значение свойства <c>true</c> указывает, что в результирующей JSON-строке для зарегистрированных интерфейсов будет добавлено специальное поле,
+    /// сигнализирующее, что она была построена с помощью <see cref="DtoConverter{T}"/>
+    /// </para>
+    /// <para xml:lang="en">
+    /// The <c>true</c> property value indicates that a special field will be added to the resulting JSON string for registered interfaces,
+    /// signaling that it was built with <see cref="DtoConverter{T}"/>
+    /// </para>
+    /// </summary>
     public bool WithMagic
     {
         get => _withMagic;
@@ -127,22 +135,72 @@ public class DtoJsonConverterFactory : JsonConverterFactory
         }
     }
 
-    public bool WithKeyOnlyForRepeated
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// СВойство, указывающее, как будут обрабатываться свойства сериализуемых объектов:
+    /// <see cref="PropertiesProcessingKind.OnlyKeysForRepeats"/>: все записываемые свойства попадут в результирующий JSON, если ссылка на объект 
+    /// встретилась впервые и только ключевые свойства в остальных случаях (установлено по умолчанию);
+    /// <see cref="PropertiesProcessingKind.AllProperties"/>: все записываемые свойства попадут в результирующий JSON;
+    /// <see cref="PropertiesProcessingKind.OnlyKeys"/>: только ключевые свойства попадут в результирующий JSON. (Полезно для запросов с клиента, который работает
+    /// с интерфейсами и знать не хочет ни о каких ключах).
+    /// В случае, когда передаются только ключевые свойства, в JSON также добавляется служебное специальное поле <code>"$keyOnly": true</code>
+    /// </para>
+    /// <para xml:lang="en">
+    /// A property indicating how the properties of serialized objects will be processed:
+    /// <see cref="PropertiesProcessingKind.OnlyKeysForRepeats"/>: all writeable properties will be in the resulting JSON if the object reference
+    /// met for the first time and only key properties in other cases (set by default);
+    /// <see cref="PropertiesProcessingKind.AllProperties"/>: all writeable properties will be included in the resulting JSON;
+    /// <see cref="PropertiesProcessingKind.OnlyKeys"/>: Only key properties will be included in the resulting JSON. (Useful for requests from a client that is running
+    /// with interfaces and doesn't want to know about any keys).
+    /// In the case when only key properties are passed, a service special field <code>"$keyOnly": true</code> is also added to JSON
+    /// </para>
+    /// </summary>
+    public PropertiesProcessingKind PropertiesProcessingKind
     {
-        get => _withOnlyKeysForRepeated;
+        get => _propertiesProcessingKind;
         set
         {
             CheckUsed();
-            _withOnlyKeysForRepeated = value;
+            _propertiesProcessingKind = value;
         }
     }
 
-
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Инициализируется лесом зарегистрированных типов <see cref="TypesForest"/>
+    /// </para>
+    /// <para xml:lang="en">
+    /// Initialized with a forest of registered types <see cref="TypesForest"/>
+    /// </para>
+    /// </summary>
+    /// <param name="typesForest"></param>
+    /// <exception cref="ArgumentNullException">
+    /// <para xml:lang="ru">
+    /// Без леса зарегистрированных типов <see cref="TypesForest"/> ничего не будет работать
+    /// </para>
+    /// <para xml:lang="en">
+    /// Without a forest of registered types <see cref="TypesForest"/> nothing will work
+    /// </para>
+    /// </exception>
     public DtoJsonConverterFactory(TypesForest typesForest)
     {
         TypesForest = typesForest ?? throw new ArgumentNullException(nameof(typesForest)) ;
     }
 
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// При повторном использовании <see cref="DtoJsonConverterFactory"/> с установленным в <see cref="PropertiesProcessingKind.OnlyKeys"/> 
+    /// свойством <see cref="PropertiesProcessingKind"/>
+    /// следует очистить кеш, созданный для учёта повторяющихся объектов. (Скорее всего, не понадобится при использовании в ASP.NET, так как обычно сервис 
+    /// будет регистрироваться как <code>Transient</code>
+    /// </para>
+    /// <para xml:lang="en">
+    /// When reusing <see cref="DtoJsonConverterFactory"/> with property set to <see cref="PropertiesProcessingKind.OnlyKeys"/>
+    /// <see cref="PropertiesProcessingKind"/>
+    /// should clear the cache created to account for duplicate objects. (Probably not needed when used in ASP.NET, as a service usually
+    /// will be registered as <code>Transient</code>
+    /// </para>
+    /// </summary>
     public void ClearCaches()
     {
         ObjectCachesClear?.Invoke(this, _eventArgs);
@@ -155,13 +213,7 @@ public class DtoJsonConverterFactory : JsonConverterFactory
     public override bool CanConvert(Type typeToConvert)
     {
         _used = true;
-        // Если вызвана десериализация для одного из типов-заглушек: AppendableListStub<> или RewritableListStub<>,
-        // используемых для 2) варианта применения (см. описание класса)
         if (TypesForest.ServiceProvider.Select(sd => sd.ServiceType).Any(t => typeof(ListStub<>).MakeGenericType(new Type[] { t }).IsAssignableFrom(typeToConvert)))
-        {
-            return true;
-        }
-        if (typeToConvert.IsGenericType && typeToConvert.GetGenericTypeDefinition() == typeof(KeyStub<>))
         {
             return true;
         }
@@ -182,8 +234,6 @@ public class DtoJsonConverterFactory : JsonConverterFactory
             ).FirstOrDefault((Type?)null);
         if (type is { })
         {
-            // Если вызвана десериализация для одного из типов-заглушек: AppendableList<> или RewritableList<>,
-            // используемых для 2) варианта применения (см. описание класса)
             ListStubKind kind = typeToConvert.IsAssignableFrom(typeof(AppendableListStub<>).MakeGenericType(new Type[] { type })) 
                 ? ListStubKind.Appendable
                 : (
@@ -199,8 +249,6 @@ public class DtoJsonConverterFactory : JsonConverterFactory
         }
         else
         {
-            // Если вызвана сериализация/десериализация для одного из зарегистрированных интерфейсов,
-            // используемых для 1) варианта применения (см. описание класса)
             converter = (JsonConverter)Activator.CreateInstance(
                     typeof(DtoConverter<>).MakeGenericType(new Type[] { typeToConvert }), 
                     args: new object[] { this }

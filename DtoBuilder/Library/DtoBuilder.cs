@@ -72,14 +72,14 @@ public class DtoBuilder
     /// <summary>
     /// <para xml:lang="ru">
     /// Строит объект с помощью объекта-хэлпера любого класса, в котором есть методы, имеющие сигнатуры специальных делегатов:
-    /// <see cref="BeforeOrAfterProcessor"/>, <see cref="NodeSetter"/>, <see cref="TerminalSetter"/> 
+    /// <see cref="BeforeOrAfterProcessor"/>, <see cref="ValueSetter"/>
     /// и помечены специальными атрибутами:
     /// <see cref="SetupAttribute"/>, <see cref="BeforeAttribute"/>, <see cref="PathAttribute"/>, <see cref="AfterAttribute"/>, 
     /// <see cref="ShutdownAttribute"/>
     /// </para>
     /// <para xml:lang="en">
     /// Constructs an object using a helper object of any class that has methods that have special delegate signatures:
-    /// <see cref="BeforeOrAfterProcessor"/>, <see cref="NodeSetter"/>, <see cref="TerminalSetter"/>
+    /// <see cref="BeforeOrAfterProcessor"/>, <see cref="ValueSetter"/>
     /// and are marked with special attributes:
     /// <see cref="SetupAttribute"/>, <see cref="BeforeAttribute"/>, <see cref="PathAttribute"/>, <see cref="AfterAttribute"/>,
     /// <see cref="ShutdownAttribute"/>
@@ -216,13 +216,13 @@ public class DtoBuilder
                         targets.Pop();
                         if (targets.Count > 0)
                         {
-                            request.PropertyNode.PropertyInfo!.SetValue(targets.Peek(), eventArgs.Result);
+                            request.PropertyNode.PropertyInfo!.SetValue(targets.Peek(), eventArgs.Value);
                         }
                         else
                         {
-                            result = (T?)eventArgs.Result;
+                            result = (T?)eventArgs.Value;
                         }
-                        targets.Push(eventArgs.Result);
+                        targets.Push(eventArgs.Value);
                         _probeObjects.TryAdd(request.PropertyNode.TypeNode.Type, target);
                     }
                     if (eventArgs.IsCommited)
@@ -239,10 +239,10 @@ public class DtoBuilder
                     {
                         ignoredPaths.Add($"{eventArgs.NominalType} {eventArgs.Path}");
                     }
-                    if (childPosition == typeNodes!.Peek()!.KeysCount)
+                    if (childPosition > 0 && childPosition == typeNodes!.Peek()!.KeysCount)
                     {
                         key = request.PropertyNode.TypeNode.GetKey(targets.Peek()!);
-                        if (_objectCache.TryGet(request.PropertyNode.TypeNode.Type, key, out object cachedObject))
+                        if (_objectCache.TryGet(request.PropertyNode.TypeNode.Type, key!, out object? cachedObject))
                         {
                             _probeObjects.TryAdd(request.PropertyNode.TypeNode.Type, targets.Peek()!);
                             targets.Pop();
@@ -315,25 +315,28 @@ public class DtoBuilder
         {
             sb.Append(@$"
         case ""{args.Path}"":");
-            switch (args.Kind)
+            if (args.IsLeaf)
             {
-                case ValueRequestKind.Terminal:
-                    sb.Append(@"
+                sb.Append(@"
             //args.Value = ...;
             //args.Commit();");
-                    args.Commit();
-                    break;
-                case ValueRequestKind.NullableNode:
+                args.Commit();
+            }
+            else
+            {
+                if (args.IsNullable)
+                {
                     sb.Append(@"
             //args.Value = ...;
             //args.Value = null;
             //args.Commit();");
-                    break;
-                case ValueRequestKind.NotNullableNode:
+                }
+                else
+                {
                     sb.Append(@"
             //args.Value = ...;
             //args.Commit();");
-                    break;
+                }
             }
             sb.Append(@"
             break;");
@@ -405,28 +408,13 @@ public class HelperSkeleton
 ");
         void eh(ValueRequestEventArgs args)
         {
-            switch (args.Kind)
-            {
-                case ValueRequestKind.Terminal:
-                    sb.Append($@"
-    [Path(""{args.Path}"", typeof(TerminalSetter))]
-    public object Set_{args.Path.Substring(1).Replace(Slash, Under)}(object value)
+            sb.Append($@"
+    [Path(""{args.Path}"")]
+    public object Set_{args.Path.Substring(1).Replace(Slash, Under)}(string path, object value, bool isNullable, ref bool isCommited)
     {{
         throw new NotImplementedException();
     }}
 ");
-                    args.Commit();
-                    break;
-                case ValueRequestKind.NullableNode or ValueRequestKind.NotNullableNode:
-                    sb.Append($@"
-    [Path(""{args.Path}"", typeof(NodeSetter))]
-    public object Set_{args.Path.Substring(1).Replace(Slash, Under)}(object value, bool isNullable, ref bool isCommited)
-    {{
-        throw new NotImplementedException();
-    }}
-");
-                    break;
-            }
         }
         ValueRequest += eh;
         Build<T>();
@@ -447,35 +435,33 @@ public class HelperSkeleton
         {
             if (methods.TryGetValue(args.Path, out MethodInfo? method))
             {
+                Type delegateType = null!;
                 try
                 {
+                    object?[] parameters = null!;
                     if (_helperMethods[helper.GetType()].TryGetValue(Before, out MethodInfo? before))
                     {
-                        object?[] parameters = new object[] { args.Path, args.Value };
+                        delegateType = typeof(BeforeOrAfterProcessor);
+                        parameters = new object?[] { args.Path, args.Value };
                         before?.Invoke(helper, parameters);
                     }
-                    if (args.Kind is ValueRequestKind.Terminal)
+                    delegateType = typeof(ValueSetter);
+                    parameters = new object[4];
+                    parameters[0] = args.Path;
+                    parameters[1] = args.Value;
+                    parameters[2] = args.IsNullable;
+                    parameters[3] = false;
+                    args.Value = method.Invoke(helper, parameters);
+                    if (args.IsLeaf 
+                        || (!args.IsLeaf && parameters[3] is bool isCommited && isCommited)
+                    )
                     {
-                        object?[] parameters = new object[1];
-                        parameters[0] = args.Value;
-                        args.Value = method.Invoke(helper, parameters);
                         args.Commit();
                     }
-                    else
+                    if (_helperMethods[helper.GetType()].TryGetValue(After, out MethodInfo? after))
                     {
-                        object?[] parameters = new object[3];
-                        parameters[0] = args.Value;
-                        parameters[1] = args.Kind is ValueRequestKind.NullableNode;
-                        parameters[2] = false;
-                        args.Value = method.Invoke(helper, parameters);
-                        if ((parameters[2] is bool isCommited && isCommited))
-                        {
-                            args.Commit();
-                        }
-                    }
-                    if (_helperMethods[helper.GetType()].TryGetValue(ShutDown, out MethodInfo? after))
-                    {
-                        object?[] parameters = new object[] { args.Path, args.Value };
+                        delegateType = typeof(BeforeOrAfterProcessor);
+                        parameters = new object?[] { args.Path, args.Value };
                         after?.Invoke(helper, parameters);
                     }
                 }
@@ -484,7 +470,7 @@ public class HelperSkeleton
                     throw new AggregateException(new Exception[] { tgpex, new Exception(@$"{method} parameters count mismatch
 possibly reasons:
 1) {args.NominalType} is not registered
-2) wrong delegate type used") });
+2) wrong delegate type used, expected: {delegateType.ToString()}") });
                 }
                 catch (TargetInvocationException tiex)
                 {
@@ -558,10 +544,6 @@ possibly reasons:
                     ParameterInfo[] parameters0 = methodInfo.GetParameters();
                     foreach (PathAttribute PathAttribute in methodInfo.GetCustomAttributes<PathAttribute>())
                     {
-                        if (!IsMethodDelegate(methodInfo, PathAttribute.DelegateType))
-                        {
-                            delegateMismatches.Add($"{methodInfo} is not a delegate {PathAttribute.DelegateType}");
-                        }
                         if (!_helperMethods[type].TryAdd(PathAttribute.Path, methodInfo))
                         {
                             repeatedMethods[PathAttribute.Path] = true;
@@ -573,7 +555,7 @@ possibly reasons:
         }
         if (delegateMismatches.Count > 0 || repeatedMethods.Count > 0)
         {
-            _helperMethods[type] = null;
+            _helperMethods.Remove(type);
             List<Exception> exceptions = new();
             if (delegateMismatches.Count > 0)
             {

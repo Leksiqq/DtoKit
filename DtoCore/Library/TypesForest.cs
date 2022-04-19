@@ -23,6 +23,14 @@ public class TypesForest
 
     private Dictionary<Type, TypeNode> _typeTrees { get; init; } = new();
 
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// <see cref="DtoServiceProvider"/>, которым инициализирован данный лес
+    /// </para>
+    /// <para xml:lang="en">
+    /// <see cref="DtoServiceProvider"/> with which this forest is initialized
+    /// </para>
+    /// </summary>
     public DtoServiceProvider ServiceProvider { get; init; }
 
     /// <summary>
@@ -76,39 +84,99 @@ public class TypesForest
         return _typeTrees[type];
     }
 
-    public PropertyNode? GetPropertyNode(TypeNode typeNode, string propertyName)
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Ищет в лесу <see cref="PropertyNode"/>
+    /// </para>
+    /// <para xml:lang="en">
+    /// Searches the forest for <see cref="PropertyNode"/>
+    /// </para>
+    /// </summary>
+    /// <param name="typeNode">
+    /// <para xml:lang="ru">
+    /// <see cref="TypeNode"/>, содержащий искомое свойство
+    /// </para>
+    /// <para xml:lang="en">
+    /// <see cref="TypeNode"/> containing the desired property
+    /// </para>
+    /// </param>
+    /// <param name="propertyName">
+    /// <para xml:lang="ru">
+    /// Имя искомого свойства
+    /// </para>
+    /// <para xml:lang="en">
+    /// Name of the searched property
+    /// </para>
+    /// </param>
+    /// <returns></returns>
+    public PropertyNode? FindPropertyNode(TypeNode typeNode, string propertyName)
     {
-        return typeNode?.ChildNodes.Find(propertyNode => propertyNode.Name == propertyName);
+        return typeNode.ChildNodes?.Find(propertyNode => propertyNode.Name == propertyName);
     }
 
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Копирует полное дерево объекта в целевой объект по шаблону применяемого интерфейса
+    /// </para>
+    /// <para xml:lang="en">
+    /// Copies the complete object tree to the target object according to the template of the applied interface
+    /// </para>
+    /// </summary>
+    /// <param name="sourceType">
+    /// <para xml:lang="ru">
+    /// Применяемый интерфейс
+    /// </para>
+    /// <para xml:lang="en">
+    /// Applied interface
+    /// </para>
+    /// </param>
+    /// <param name="source">
+    /// <para xml:lang="ru">
+    /// Исходный объект
+    /// </para>
+    /// <para xml:lang="en">
+    /// Source object
+    /// </para>
+    /// </param>
+    /// <param name="target">
+    /// <para xml:lang="ru">
+    /// Целевой объект
+    /// </para>
+    /// <para xml:lang="en">
+    /// Target object
+    /// </para>
+    /// </param>
     public void Copy(Type sourceType, object source, object target)
     {
         TypeNode typeNode = GetTypeNode(sourceType);
-        foreach (PropertyNode propertyNode in typeNode.ChildNodes)
+        if(typeNode.ChildNodes is { })
         {
-            object? sourceValue = propertyNode.PropertyInfo.GetValue(source);
-            if (sourceValue is null)
+            foreach (PropertyNode propertyNode in typeNode.ChildNodes)
             {
-                propertyNode.PropertyInfo.SetValue(target, null);
-            }
-            else
-            {
-                if (propertyNode.TypeNode.ChildNodes is { } children)
+                object? sourceValue = propertyNode.PropertyInfo?.GetValue(source);
+                if (sourceValue is null)
                 {
-                    object? targetValue = propertyNode.PropertyInfo.GetValue(target);
-                    if (targetValue is null)
-                    {
-                        targetValue = ServiceProvider.GetRequiredService(propertyNode.TypeNode.Type);
-                        propertyNode.PropertyInfo.SetValue(target, targetValue);
-                    }
-                    Copy(propertyNode.TypeNode.Type, sourceValue, targetValue);
+                    propertyNode.PropertyInfo?.SetValue(target, null);
                 }
                 else
                 {
-                    propertyNode.PropertyInfo.SetValue(target, sourceValue);
+                    if (propertyNode.TypeNode.ChildNodes is { } children)
+                    {
+                        object? targetValue = propertyNode.PropertyInfo?.GetValue(target);
+                        if (targetValue is null)
+                        {
+                            targetValue = ServiceProvider.GetRequiredService(propertyNode.TypeNode.Type);
+                            propertyNode.PropertyInfo?.SetValue(target, targetValue);
+                        }
+                        Copy(propertyNode.TypeNode.Type, sourceValue, targetValue);
+                    }
+                    else
+                    {
+                        propertyNode.PropertyInfo?.SetValue(target, sourceValue);
+                    }
                 }
-            }
 
+            }
         }
     }
 
@@ -251,7 +319,8 @@ public class TypesForest
                     TypeNode = ServiceProvider.IsRegistered(propertyInfo.PropertyType) 
                         ? GetTypeNode(propertyInfo.PropertyType) 
                         : new TypeNode { Type = propertyInfo.PropertyType, ActualType = propertyInfo.PropertyType },
-                    IsNullable = propertyInfo.GetCustomAttributes().Any(a => a.GetType().Name.Contains(_nullableAttributeName))
+                    IsNullable = (propertyInfo.PropertyType.IsValueType && Nullable.GetUnderlyingType(propertyInfo.PropertyType) is Type)
+                        || propertyInfo.GetCustomAttributes().Any(a => a.GetType().Name.Contains(_nullableAttributeName))
                 };
                 typeNode.ChildNodes!.Add(newPropertyNode);
             }

@@ -1,4 +1,6 @@
-﻿namespace Net.Leksi.Dto;
+﻿using System.Text.Json.Serialization;
+
+namespace Net.Leksi.Dto;
 
 /// <summary>
 /// <para xml:lang="ru">
@@ -16,14 +18,16 @@ public class ListStub<T>
     /// <summary>
     /// <para xml:lang="ru">
     /// Объект-заглушка для формального параметра  
-    /// <see cref="System.Text.Json.JsonSerializer{T}.Write(System.Text.Json.Utf8JsonWriter, ListStub{T}, System.Text.Json.JsonSerializerOptions)"/>
+    /// <see cref="JsonConverter{T}.Write(System.Text.Json.Utf8JsonWriter, T, System.Text.Json.JsonSerializerOptions)"/>
     /// </para>
     /// <para xml:lang="en">
     /// Stub object for formal parameter of 
-    /// <see cref="System.Text.Json.JsonSerializer{T}.Write(System.Text.Json.Utf8JsonWriter, ListStub{T}, System.Text.Json.JsonSerializerOptions)"/>
+    /// <see cref="JsonConverter{T}.Write(System.Text.Json.Utf8JsonWriter, T, System.Text.Json.JsonSerializerOptions)"/>
     /// </para>
     /// </summary>
     public static ListStub<T> Instance { get; private set; } = new();
-
+    /// <summary>
+    /// 
+    /// </summary>
     protected ListStub() { }
 }

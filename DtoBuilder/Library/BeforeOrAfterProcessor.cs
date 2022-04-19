@@ -20,4 +20,4 @@
 /// </para>
 /// </param>
 /// <param name="value"></param>
-public delegate void BeforeOrAfterProcessor(string path, object value);
+public delegate void BeforeOrAfterProcessor(string path, object? value);

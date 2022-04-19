@@ -1,5 +1,4 @@
 ﻿using System.Collections;
-using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -61,7 +60,7 @@ internal class ListDeserializer<T> : JsonConverter<ListStub<T>> where T : class
     public override ListStub<T>? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         IList? result = null;
-        T? updateableProbe = null;
+        T updateableProbe = null!;
         if(_kind is ListStubKind.Updateable)
         {
             _keyComparer = new KeyEqualityComparer();
@@ -92,7 +91,7 @@ internal class ListDeserializer<T> : JsonConverter<ListStub<T>> where T : class
                     {
                         _factory.Target = result[i];
                     }
-                    else if (_factory.ObjectsPool.TryGetValue(typeof(T), out List<object> pool) && pool.Count > 0)
+                    else if (_factory.ObjectsPool.TryGetValue(typeof(T), out List<object>? pool) && pool.Count > 0)
                     {
                         _factory.Target = pool[0];
                         pool.RemoveAt(0);
@@ -115,7 +114,7 @@ internal class ListDeserializer<T> : JsonConverter<ListStub<T>> where T : class
             {
                 if(_kind is ListStubKind.Updateable)
                 {
-                    updateableProbe = value;
+                    updateableProbe = value!;
                     UpdateElement(result, updateableProbe);
                 }
                 else
@@ -142,7 +141,10 @@ internal class ListDeserializer<T> : JsonConverter<ListStub<T>> where T : class
             }
             while (i < result.Count)
             {
-                _factory.ObjectsPool[typeof(T)].Add(result[i]);
+                if(result[i] is { })
+                {
+                    _factory.ObjectsPool[typeof(T)].Add(result[i]!);
+                }
                 result.RemoveAt(i);
             }
         }
@@ -166,17 +168,17 @@ internal class ListDeserializer<T> : JsonConverter<ListStub<T>> where T : class
         throw new NotImplementedException();
     }
 
-    private void UpdateElement(IList result, T? updateableProbe)
+    private void UpdateElement(IList result, T updateableProbe)
     {
-        object[] key = _typeNode.GetKey(updateableProbe);
-        for(int i = _objectCache.Count; i < result.Count; i++)
+        object[] key = _typeNode!.GetKey(updateableProbe)!;
+        for (int i = _objectCache!.Count; i < result.Count; i++)
         {
-            object[] itemKey = _typeNode.GetKey(result[i]);
-            _objectCache.Add(typeof(T), itemKey, result[i]);
+            object[] itemKey = _typeNode!.GetKey(result[i]!)!;
+            _objectCache.Add(typeof(T), itemKey, result[i]!);
         }
-        if(_objectCache.TryGet(typeof(T), key, out object item))
+        if (_objectCache.TryGet(typeof(T), key, out object? item))
         {
-            _factory.TypesForest.Copy(typeof(T), updateableProbe, item);
+            _factory.TypesForest.Copy(typeof(T), updateableProbe, item!);
         }
     }
 
