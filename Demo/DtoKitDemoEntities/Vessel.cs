@@ -7,6 +7,7 @@ public class Vessel
     [Key]
     public string ID_VESSEL { get; set; }
 
+    public Port Port { get; set; }
     public double Length { get; set; }
 
     public double Width { get; set; }
