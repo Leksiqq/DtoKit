@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using System.Collections;
+﻿using System.Collections;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -50,7 +49,7 @@ public class DtoJsonConverterFactory : JsonConverterFactory
     /// deserialization was set to null;
     /// </para>
     /// </summary>
-    public Dictionary<Type, List<object>> ObjectsPool { get; init; } = new();
+    internal Dictionary<Type, List<object>> ObjectsPool { get; init; } = new();
 
     /// <summary>
     /// <para xml:lang="ru">

@@ -173,6 +173,7 @@ public class DtoBuilder
         int skipTo = -1;
         int childPosition = 0;
         object[]? key = null;
+        eventArgs.RootType = typeof(T);
         foreach (ValueRequest request in root.TypeNode.ValueRequests!)
         {
 
@@ -225,7 +226,7 @@ public class DtoBuilder
                         targets.Push(eventArgs.Value);
                         _probeObjects.TryAdd(request.PropertyNode.TypeNode.Type, target);
                     }
-                    if (eventArgs.IsCommited)
+                    if (eventArgs.IsReset || eventArgs.IsCommited)
                     {
                         skipTo = targets.Count - 1;
                     }
@@ -233,6 +234,7 @@ public class DtoBuilder
                 else
                 {
                     childPosition++;
+                    request.PropertyNode.PropertyInfo!.SetValue(targets.Peek(), default);
                     eventArgs.Init(request.PropertyNode, targets.Peek()!, request.Path);
                     ValueRequest?.Invoke(eventArgs);
                     if (!eventArgs.IsCommited)
@@ -318,9 +320,8 @@ public class DtoBuilder
             if (args.IsLeaf)
             {
                 sb.Append(@"
-            //args.Value = ...;
-            //args.Commit();");
-                args.Commit();
+            //args.Value = ...;");
+                args.IsCommited = true;
             }
             else
             {
@@ -328,14 +329,13 @@ public class DtoBuilder
                 {
                     sb.Append(@"
             //args.Value = ...;
-            //args.Value = null;
-            //args.Commit();");
+            //args.Value = null;");
                 }
                 else
                 {
                     sb.Append(@"
             //args.Value = ...;
-            //args.Commit();");
+            //args.IsCommited = true;");
                 }
             }
             sb.Append(@"
@@ -395,13 +395,13 @@ public class HelperSkeleton
     }
 
     [Before]
-    public void Before(string path, object value)
+    public void Before(string path, Type type, object? value, bool isLeaf, bool isNullable)
     {
         throw new NotImplementedException();
     }
 
     [After]
-    public void After(string path, object value)
+    public void After(string path, Type type, object? value, bool isLeaf, bool isNullable)
     {
         throw new NotImplementedException();
     }
@@ -410,7 +410,7 @@ public class HelperSkeleton
         {
             sb.Append($@"
     [Path(""{args.Path}"")]
-    public object Set_{args.Path.Substring(1).Replace(Slash, Under)}(string path, object value, bool isNullable, ref bool isCommited)
+    public object Set_{args.Path.Substring(1).Replace(Slash, Under)}(string path, Type type, object? value, ref bool isCommited)
     {{
         throw new NotImplementedException();
     }}
@@ -442,26 +442,22 @@ public class HelperSkeleton
                     if (_helperMethods[helper.GetType()].TryGetValue(Before, out MethodInfo? before))
                     {
                         delegateType = typeof(BeforeOrAfterProcessor);
-                        parameters = new object?[] { args.Path, args.Value };
+                        parameters = new object?[] { args.Path, args.NominalType, args.Value, args.IsLeaf, args.IsNullable };
                         before?.Invoke(helper, parameters);
                     }
                     delegateType = typeof(ValueSetter);
-                    parameters = new object[4];
-                    parameters[0] = args.Path;
-                    parameters[1] = args.Value;
-                    parameters[2] = args.IsNullable;
-                    parameters[3] = false;
+                    parameters = new object?[] { args.Path, args.NominalType, args.Value, false };
                     args.Value = method.Invoke(helper, parameters);
                     if (args.IsLeaf 
                         || (!args.IsLeaf && parameters[3] is bool isCommited && isCommited)
                     )
                     {
-                        args.Commit();
+                        args.IsCommited = true;
                     }
                     if (_helperMethods[helper.GetType()].TryGetValue(After, out MethodInfo? after))
                     {
                         delegateType = typeof(BeforeOrAfterProcessor);
-                        parameters = new object?[] { args.Path, args.Value };
+                        parameters = new object?[] { args.Path, args.NominalType, args.IsLeaf, args.Value, args.IsNullable };
                         after?.Invoke(helper, parameters);
                     }
                 }

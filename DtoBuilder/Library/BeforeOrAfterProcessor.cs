@@ -19,5 +19,36 @@
 /// Absolute path from the root of the object tree
 /// </para>
 /// </param>
-/// <param name="value"></param>
-public delegate void BeforeOrAfterProcessor(string path, object? value);
+/// <param name="type">
+/// <para xml:lang="ru">
+/// Номинальный тип свойства
+/// </para>
+/// <para xml:lang="en">
+/// Nominal property type
+/// </para>
+/// </param>
+/// <param name="value">
+/// <para xml:lang="ru">
+/// Текущее значение свойства
+/// </para>
+/// <para xml:lang="en">
+/// The current value of the property
+/// </para>
+/// </param>
+/// <param name="isLeaf">
+/// <para xml:lang="ru">
+/// Указывает, является ли текущий узел листом
+/// </para>
+/// <para xml:lang="en">
+/// Indicates if the current node is a leaf
+/// </para>
+/// </param>
+/// <param name="isNullable">
+/// <para xml:lang="ru">
+/// Указывает, может ли быть присвоено значение <code>null</code>
+/// </para>
+/// <para xml:lang="en">
+/// Indicates whether <code>null</code> can be assigned
+/// </para>
+/// </param>
+public delegate void BeforeOrAfterProcessor(string path, Type type, object? value, bool isLeaf, bool isNullable);

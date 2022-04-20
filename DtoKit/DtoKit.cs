@@ -34,7 +34,7 @@ public static class DtoKit
     /// </param>
     /// <param name="configure">
     /// <para xml:lang="ru">
-    /// <see cref="Action{IServiceCollection}"/> для непосредственного выполненя регистрации
+    /// <see cref="Action{IServiceCollection}"/> для непосредственного выполнения регистрации
     /// </para>
     /// <para xml:lang="en">
     /// <see cref="Action{IServiceCollection}"/> to perform registration itself

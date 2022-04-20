@@ -1,15 +1,14 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using DeepEqual.Syntax;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Net.Leksi.Dto;
 using NUnit.Framework;
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using System.Diagnostics;
-using TestProject1.Dto1;
-using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Text.Json;
-using DeepEqual.Syntax;
-using Microsoft.Extensions.Hosting;
+using TestProject1.Dto1;
 
 namespace TestProject1;
 
@@ -60,9 +59,9 @@ public class DtoJsonConverterUnitTest
         dtoBuilder.ValueRequest += args =>
         {
             //Trace.WriteLine(args.Path);
-            if(args.Kind is ValueRequestKind.Leaf)
+            if(args.IsLeaf)
             {
-                args.Commit();
+                args.IsCommited = true;
             }
         };
 
@@ -78,7 +77,12 @@ public class DtoJsonConverterUnitTest
 
         Console.WriteLine(json);
 
-        json = JsonSerializer.Serialize(new KeyStub<IShipCall>(shipCall), options);
+        converter = host.Services.GetRequiredService<DtoJsonConverterFactory>();
+        converter.WithMagic = true;
+        converter.PropertiesProcessingKind = PropertiesProcessingKind.OnlyKeys;
+        options = new() { WriteIndented = true };
+        options.Converters.Add(converter);
+        json = JsonSerializer.Serialize(shipCall, options);
 
         Console.WriteLine(json);
     }
@@ -100,74 +104,74 @@ public class DtoJsonConverterUnitTest
             {
                 case "/ID_LINE":
                     args.Value = "TRE";
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/ID_ROUTE":
                     args.Value = i;
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/RouteImpl/ID_LINE":
                     args.Value = "TRE";
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/RouteImpl/ID_RHEAD":
                     args.Value = 1;
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/RouteImpl/Line/ID_LINE":
                     args.Value = "TRE";
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/RouteImpl/Line/Name":
                     args.Value = "TRE";
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/RouteImpl/Vessel/ID_VESSEL":
                     args.Value = "VARYAG";
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/RouteImpl/Vessel/Name":
                     args.Value = "VARYAG";
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/Voyage":
                     args.Value = "VAR22001";
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/VoyageAlt":
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/Location/ID_LOCATION":
                     args.Value = i.ToString();
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/Location/Type":
                     args.Value = LocationType.Port;
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/Location/Unlocode":
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/Location/Name":
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/ScheduledArrival":
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/ActualArrival":
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/ScheduledDeparture":
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/ActualDeparture":
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/Condition":
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/AdditionalInfo":
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
             }
         };
@@ -244,7 +248,12 @@ public class DtoJsonConverterUnitTest
 
         Console.WriteLine(json);
 
-        json = JsonSerializer.Serialize(new KeyStub<List<IShipCallForListing>>(res), options);
+        converter = converter = host.Services.GetRequiredService<DtoJsonConverterFactory>();
+        converter.WithMagic = withMagic;
+        converter.PropertiesProcessingKind = PropertiesProcessingKind.OnlyKeys;
+        options = new JsonSerializerOptions { WriteIndented = true };
+        options.Converters.Add(converter);
+        json = JsonSerializer.Serialize(res, options);
 
         Console.WriteLine(json);
 

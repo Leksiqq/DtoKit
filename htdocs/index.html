@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-<title>Документация по DtoKit</title>
+<title>Учебник по DtoKit</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 body {
@@ -19,6 +19,7 @@ body {
   background-color: rgb(255, 255, 255);
   overflow-x: hidden;
   padding-top: 20px;
+  font-size: smaller;
 }
 
 .sidenav a {
@@ -35,16 +36,37 @@ body {
   .sidenav {padding-top: 15px;}
   .sidenav a {font-size: 18px;}
 }
+
+.indent1 {
+    margin-left: 10px;
+}
+
+.indent2 {
+    margin-left: 20px;
+}
+
+tr td:first-child {
+  width: 0;
+  white-space: nowrap;
+}
 </style>
 </head>
 <body>
 
 <div class="sidenav">
     <a href="index_en.html">In English</a>
-  <a href="#DtoKit">DtoKit</a>
+  <a style="font-size: larger;" href="#DtoKit">DtoKit</a>
   <a href="#class_tree">Дерево класса</a>
   <a href="#interface_tree">Дерево интерфейса</a>
   <a href="#narrowing_interfaces">Сужающие интерфейсы</a>
+  <a href="#DtoKit.Install"><code>DtoKit.Install(...)</code></a>
+  <a href="#DtoBuilder">DtoBuilder</a>
+  <a class="indent1" href="#DtoBuilder.Build"><code>Build&lt;T&gt;()</code></a>
+  <a class="indent2" href="#ValueRequestEventArgs"><code>ValueRequestEventArgs</code></a>
+  <a class="indent1" href="#DtoBuilder.Build_helper"><code>Build&lt;T&gt;(helper)</code></a>
+  <a href="#DtoJsonConverterFactory">DtoJsonConverterFactory</a>
+  <a class="indent1" href="#serialization">Сериализация</a>
+  <a class="indent1" href="#deserialization">Десериализация</a>
 </div>
 
 <div class="main">
@@ -213,14 +235,343 @@ body {
         </tr>
         <tr class="shipcall">
             <td valign="top">
-                <script src="https://gist.github.com/Leksiqq/c999e07c6071db04031ea33debf48318.js"></script>
+                <script src="https://gist.github.com/Leksiqq/90e7f50d13fad64ee79e1172aa858bae.js"></script>
             </td>
             <td valign="top">
                 <script src="https://gist.github.com/Leksiqq/6b5f64f73a1f6e5a6805e1fd40742da9.js"></script>
+                <script src="https://gist.github.com/Leksiqq/1026838b177dd32812524f5b781f67d6.js"></script>
             </td>
         </tr>
     </table>
-</div>
+    <p>
+        Например, дерево интерфейса <code>IShipCallForList</code> выглядит так  (имена узлов опущены для простоты восприятия):
+    </p>
+    <img src="interface_tree_1.jpg"/>
+
+    <p>
+        Также в классе <code>ShipCall</code> у нас есть свойство <code>AdditionalInfo</code>, которое загружается долго из-за отдельного запроса
+        к БД. Поэтому мы хотим сначала выводить пользователю таблицу, а после этого постепенно обновлять эти ячейки.
+    </p>
+    <p>
+        Заведём ещё один интерфейс:
+    </p>
+    <table>
+        <tr class="shipcall">
+            <td valign="top">
+                <script src="https://gist.github.com/Leksiqq/5c6c8b38dddd335bbccba54bd4883453.js"></script>
+            </td>
+            <td valign="top">
+                <script src="https://gist.github.com/Leksiqq/6b5f64f73a1f6e5a6805e1fd40742da9.js"></script>
+                <script src="https://gist.github.com/Leksiqq/1026838b177dd32812524f5b781f67d6.js"></script>
+                <script src="https://gist.github.com/Leksiqq/f89449e2610874c1f5f816f2896c2a37.js"></script>
+            </td>
+        </tr>
+    </table>
+            
+    <p>
+        Дерево интерфейса <code>IShipCallAdditionalInfo</code> выглядит так  (имена узлов опущены для простоты восприятия):
+    </p>
+    <img src="interface_tree_2.jpg"/>
+
+    <a name="DtoKit.Install"/>
+
+    <h2><code>DtoKit.Install(...)</code></h2>
+    <script src="https://gist.github.com/Leksiqq/7db0ab86fda085cb13120371dbd3d400.js"></script>
+    <p>
+    Этот метод должен быть вызван во время конфигурирования механизма внедрения зависимости.
+    </p>
+    <p>
+    Через параметр <code>IServiceCollection services</code> нужно передать коллекцию сервисов, предоставляемую хостом, 
+    а параметр <code>Action<IServiceCollection> configure</code> должен содержать метод, который регистриует все интерфейсы,
+        которые введены для классов предметной области, в коллекции сервисов, предоставляемой библиотекой <code>DtoKit</code>, 
+        которая выполняет роль прокси для коллекции сервисов хоста (главное, не перепутать).
+    </p>
+    <p>
+        В нашем случае это будет выглядеть так:
+    </p>
+    <script src="https://gist.github.com/Leksiqq/fec06e77dc53f81adc5307e0556c3d54.js"></script>
+
+    <p>
+        Следует иметь в виду, что в данном контексте время жизни может быть только <code>ServiceLifetime.Transient</code>, другие вызовут исключительную ситуацию.
+    </p>
+    
+    <a name="DtoBuilder"/>
+
+    <h2>DtoBuilder</h2>
+    <p>
+      Класс <code>DtoBuilder</code> предназначен для загрузки объектов из хранилища, например, БД.
+      Имеет особенности:
+    </p>
+    <ul>
+        <li>загружает только ключевые свойства и свойства, соответствующие дереву запрошенного интерфейса</li>
+        <li>не дублирует уже загруженные объекты с тем же деревом</li>
+    </ul>
+    <p>
+        Экземпляр <code>DtoBuilder</code> нужно получить через механизм внедрения зависимости, он уже зарегистрирован там при вызове <a href="#DtoKit.Install"><code>DtoKit.Install(...)</code></a>:
+    </p>
+    <script src="https://gist.github.com/Leksiqq/eeca244c3a7eb1454b43b150d88268a1.js"></script>
+
+    <p>
+        Затем использовать одним из двух способов (T - запрашиваемый интерфейс):
+    </p>
+    <ul>
+        <li>Подписаться на событие <code>ValueRequest</code> и вызвать <a href="#DtoBuilder.Build"><code>Build&lt;T&gt;()</code></a></li>
+        <li>Вызвать <a href="#DtoBuilder.Build_helper"><code>Build&lt;T&gt;(helper)</code></a>, где <code>helper</code> - специальный объект</li>
+    </ul>
+    <p>
+        В обоих случаях метод вернёт построенный объект. Если нужно загрузить уже существующий объект, его нужно присвоить свойству <code>Target</code>. 
+        В противном случае объект будет получен через внедрение зависимости.
+    </p>
+
+    <a name="DtoBuilder.Build"/>
+    <h3><code>Build&lt;T&gt;()</code></h3>
+
+    <p>
+        При использовании этого способа нужно подписаться на событие <code>ValueRequest</code>:
+    </p>
+    <script src="https://gist.github.com/Leksiqq/5a20a2944f5bb670380d892ef632d8b0.js"></script>
+     <p>
+         При вызове метода <code>Build&lt;T&gt;()</code> происходит обход дерева запрошенного интерфейса в ширину и в каждом узле и листе
+         вызывается обработчик события, которому передаётся аргумент типа <a href="#ValueRequestEventArgs"><code>ValueRequestEventArgs</code></a>.
+     </p>
+
+     <a name="ValueRequestEventArgs"/>
+     <h4><code>ValueRequestEventArgs</code></h4>
+     <p>
+         Члены:
+     </p>
+     <ul>
+        <table>
+            <tr>
+                <td valign="top">
+                     <li><code>public Type RootType { get; }</code></li>
+                </td>
+                <td valign="top">
+                     тип запрошенного интерфейса
+                </td>
+            </tr>
+            <tr>
+                <td valign="top">
+                     <li><code>public string Path { get; }</code></li>
+                </td>
+                <td valign="top">
+                     путь от корня дерева <b>класса</b> - имена свойств через /
+                </td>
+            </tr>
+            <tr>
+                <td valign="top">
+                     <li><code>public bool IsNullable { get; }</code></li>
+                </td>
+                <td valign="top">
+                     указывает на возможность присвоить свойству значение <code>null</code>. Основывается на наличии ? в типе свойства;
+                     <code>DtoBuilder</code> запрещает присваивать <code>null</code>, если значение равно <code>false</code>
+                </td>
+            </tr>
+            <tr>
+                <td valign="top">
+                     <li><code>public bool IsLeaf { get; }</code></li>
+                </td>
+                <td valign="top">
+                     указывает, что текущий узел в дереве интерфейса является листом. Это означает, что его тип не был зарегистрирован при вызове 
+                     <a href="#DtoKit.Install"><code>DtoKit.Install(...)</code></a>
+                </td>
+            </tr>
+            <tr>
+                <td valign="top">
+                     <li><code>public Type NominalType { get; }</code></li>
+                </td>
+                <td valign="top">
+                     тип свойства текущего узла в дереве интерфейса
+                </td>
+            </tr>
+            <tr>
+                <td valign="top">
+                     <li><code>public object? Value { get; set; }</code></li>
+                </td>
+                <td valign="top">
+                     возвращает текущее значение свойства и служит для присвоения нового значения. В случае узла объект уже предоставлен
+                </td>
+            </tr>
+            <tr>
+                <td valign="top">
+                     <li><code>public bool IsCommited { get; set; }</code></li>
+                </td>
+                <td valign="top">
+                     при присвоении значения <code>true</code> узлы и листья поддерева с корнем в данном узле пропускаются.
+                </td>
+            </tr>
+        </table>
+    </ul>
+    <p>
+        В случае узла можно никаких действий не предпринимать, так как объект уже присвоен. В случае листа необходимо явно присвоить значение свойству <code>Value</code>, 
+        иначе возникнет исключение.
+    </p>
+
+    <a name="DtoBuilder.Build_helper"/>
+    <h3><code>Build&lt;T&gt;(helper)</code></h3>
+
+    <p>
+        <code>helper</code> - объект произвольного класса, содержащий публичные методы, помеченные особыми атрибутами и имеющие особую метрику.
+    </p>
+    <script src="https://gist.github.com/Leksiqq/b616025960875d69f1f637e418ca6cea.js"></script>
+
+    <ul>
+        <table>
+            <tr>
+                <td valign="top">
+                     <li><code>[Startup]</code></li>
+                </td>
+                <td valign="top">
+                     необязательный метод, который в случае наличия вызывается перед началом построения объекта
+                </td>
+            </tr>
+            <tr>
+                <td valign="top">
+                    <li><code>[Shutdown]</code></li>
+                </td>
+                <td valign="top">
+                    необязательный метод, который в случае наличия вызывается после окончания построения объекта
+                </td>
+            </tr>
+            <tr>
+                <td valign="top">
+                    <li><code>[Before]</code></li>
+                </td>
+                <td valign="top">
+                    необязательный метод, который в случае наличия вызывается перед запросом значения каждого узла или листа
+                </td>
+            </tr>
+            <tr>
+                <td valign="top">
+                    <li><code>[After]</code></li>
+                </td>
+                <td valign="top">
+                    необязательный метод, который в случае наличия вызывается после запроса значения каждого узла или листа
+                </td>
+            </tr>
+            <tr>
+                <td valign="top">
+                    <li><code>[Path("/...")]</code></li>
+                </td>
+                <td valign="top">
+                     метод, обязательный для листьев и необязательный для узлов. Если определён для узла, должен возвращать значение аргумента <code>value</code>, если
+                     остаётся предоставленный объект, либо <code>null</code>, либо ссылку на другой объект, по решению разработчика.
+                     Если не определён для листа, вызывается исключение. Один метод может иметь несколько атрибутов <code>[Path("/...")]</code>. Все пути должны быть различны в
+                     пределах класса
+                </td>
+            </tr>
+        </table>
+    </ul>
+    <p>
+        Параметры для методов, отмеченных <code>[Before]</code>, <code>[After]</code>, <code>[Path("/...")]</code>:
+    </p>
+    <ul>
+        <table>
+            <tr>
+                <td valign="top">
+                     <li><code>string path</code></li>
+                </td>
+                <td valign="top">
+                     путь от корня дерева класса
+                </td>
+            </tr>
+            <tr>
+                <td valign="top">
+                    <li><code>Type type</code></li>
+                </td>
+                <td valign="top">
+                    тип свойства текущего узла в дереве интерфейса
+                </td>
+            </tr>
+            <tr>
+                <td valign="top">
+                    <li><code>object? value</code></li>
+                </td>
+                <td valign="top">
+                    исходное значение свойства текущего узла. Для листа имеет значение <code>default</code>. Следует иметь в виду, что если свойство-лист имеет какое-то значение
+                    по умолчаниию при создании объекта, на него рассчитывать нельзя, так как оно теряется.
+                </td>
+            </tr>
+            <tr>
+                <td valign="top">
+                    <li><code>bool isLeaf</code></li>
+                </td>
+                <td valign="top">
+                    указывает, что текущий узел в дереве интерфейса является листом. Это означает, что его тип не был зарегистрирован при вызове 
+                     <a href="#DtoKit.Install"><code>DtoKit.Install(...)</code></a>
+                </td>
+            </tr>
+            <tr>
+                <td valign="top">
+                    <li><code>bool isNullable</code></li>
+                </td>
+                <td valign="top">
+                    указывает на возможность присвоить свойству значение <code>null</code>. Основывается на наличии ? в типе свойства;
+                     <code>DtoBuilder</code> запрещает присваивать <code>null</code>, если значение равно <code>false</code>
+                </td>
+            </tr>
+            <tr>
+                <td valign="top">
+                    <li><code>ref bool isCommited</code></li>
+                </td>
+                <td valign="top">
+                    при присвоении значения <code>true</code> узлы и листья поддерева с корнем в данном узле пропускаются.
+                </td>
+            </tr>
+        </table>
+    </ul>
+
+    <a name="DtoJsonConverterFactory"/>
+    <h2>DtoJsonConverterFactory</h2>
+    <p>
+       Класс <code>DtoJsonConverterFactory</code> является фабрикой кастомных Json конвертеров для работы с интерфейсами, зарегистрированными через 
+       <a href="#DtoKit.Install"><code>DtoKit.Install(...)</code></a>, а также с их коллекциями стандартными средствами из пространства имён <code>System.Text.Json.*</code>.
+       Имеет особенности: 
+       
+    </p>
+    <ul>
+        <li>
+            при сериализации записывает в результирующий Json только лючевые свойства и свойства, соответствующие дереву запрошенного интерфейса
+        </li>
+        <li>
+            по умолчанию включен режим сериализации , при котором уже сериализованные объекты записываются в Json только ключевыми свойствами
+        </li>
+        <li>
+            имеет режим сериализации при котором уже все объекты записываются в Json только ключевыми свойствами. Это удобно для запросов к серверу
+        </li>
+        <li>
+            не дублирует объекты при десериализации
+        </li>
+    </ul>
+    <p>
+        Экземпляр <code>DtoJsonConverterFactory</code> нужно получить через механизм внедрения зависимости, он уже зарегистрирован там при вызове <a href="#DtoKit.Install"><code>DtoKit.Install(...)</code></a>,
+        создать экземпляр <code>System.Text.Json.JsonSerializerOptions</code>, добавить фабрику в его конвертеры, а затем использовать обычный механизм, подставляя аргумент <code>JsonSerializerOptions</code>:
+    </p>
+    <script src="https://gist.github.com/Leksiqq/03bd0f04851fd20a980a98075673ef06.js"></script>
+
+    <a name="serialization"/>
+    <h3>Сериализация</h3>
+
+    <p>
+        Свойства, используемые только при сериализации:
+        </p>
+        
+    <ul>
+        <table>
+            <tr>
+                <td valign="top">
+                     <li><code>string path</code></li>
+                </td>
+                <td valign="top">
+                     путь от корня дерева класса
+                </td>
+            </tr>
+        </table>
+    </ul>
+
+    <a name="deserialization"/>
+    <h3>Десериализация</h3>
+  </div>
    
 </body>
 </html> 

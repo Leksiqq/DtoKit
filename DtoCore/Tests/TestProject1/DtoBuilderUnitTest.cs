@@ -62,10 +62,11 @@ public class DtoBuilderUnitTest
 
         dtoBuilder.ValueRequest += args =>
         {
-            Trace.WriteLine($"{args.Path}{string.Join("", Enumerable.Range(0, tabPos - args.Path.Length).Select(v => " "))}({args.Kind})");
-            if (args.Kind is ValueRequestKind.Leaf)
+            string kind = (args.IsNullable ? "nullable" : "not nullable") + " " + (args.IsLeaf ? "leaf" : "node");
+            Trace.WriteLine($"{args.Path}{string.Join("", Enumerable.Range(0, tabPos - args.Path.Length).Select(v => " "))}({kind})");
+            if (args.IsLeaf)
             {
-                args.Commit();
+                args.IsCommited = true;
             }
         };
 
@@ -94,82 +95,82 @@ public class DtoBuilderUnitTest
             {
                 case "/ID_LINE":
                     args.Value = "TRE";
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/ID_ROUTE":
                     args.Value = i;
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/RouteImpl/ID_LINE":
                     args.Value = "TRE";
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/RouteImpl":
                     break;
                 case "/RouteImpl/ID_RHEAD":
                     args.Value = 1;
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/RouteImpl/Line":
                     break;
                 case "/RouteImpl/Line/ID_LINE":
                     args.Value = "TRE";
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/RouteImpl/Line/Name":
                     args.Value = "TRE";
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/RouteImpl/Vessel":
                     break;
                 case "/RouteImpl/Vessel/ID_VESSEL":
                     args.Value = "VARYAG";
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/RouteImpl/Vessel/Name":
                     args.Value = "VARYAG";
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/Voyage":
                     args.Value = "VAR22001";
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/VoyageAlt":
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/Location":
                     break;
                 case "/Location/ID_LOCATION":
                     args.Value = i.ToString();
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/Location/Type":
                     args.Value = LocationType.Port;
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/Location/Unlocode":
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/Location/Name":
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/ScheduledArrival":
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/ActualArrival":
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/ScheduledDeparture":
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/ActualDeparture":
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/Condition":
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
                 case "/AdditionalInfo":
-                    args.Commit();
+                    args.IsCommited = true;
                     break;
 
             }
@@ -197,23 +198,20 @@ public class DtoBuilderUnitTest
     {
 
         [Path("/")]
-        object Apache(string path, object value, bool isNullable, ref bool isCommited)
+        object Apache(string path, Type type, object value, ref bool isCommited)
         {
             //isCommited = true;
             return new Line {ID_LINE = "NTL", Name = "NTL" };
         }
-        object Nginx(string path, object value)
-        {
-            return "1";
-        }
+
         [Path("/ID_LINE")]
         [Path("/Name")]
-        object Netscape(string path, object value)
+        object Netscape(string path, Type type, object value, ref bool isCommited)
         {
             return "TRE";
         }
 
-        [Net.Leksi.Dto.Setup]
+        [Setup]
         void Setup()
         {
             Trace.WriteLine("Setup");
@@ -262,73 +260,73 @@ public class DtoBuilderUnitTest
     class TravelHelper
     {
         [Path("/ArrivalShipCall")]
-        public object Set_ArrivalShipCall(string path, object value, bool isNullable, ref bool isCommited)
+        public object Set_ArrivalShipCall(string path, Type type, object value, bool isNullable, ref bool isCommited)
         {
             return null;
         }
 
         [Path("/ArrivalShipCall/ID_LINE")]
-        public object Set_ArrivalShipCall_ID_LINE(string path, object value)
+        public object Set_ArrivalShipCall_ID_LINE(string path, Type type, object value, bool isNullable, ref bool isCommited)
         {
             throw new NotImplementedException();
         }
 
         [Path("/ArrivalShipCall/ID_ROUTE")]
-        public object Set_ArrivalShipCall_ID_ROUTE(string path, object value)
+        public object Set_ArrivalShipCall_ID_ROUTE(string path, Type type, object value, bool isNullable, ref bool isCommited)
         {
             throw new NotImplementedException();
         }
 
         [Path("/ArrivalShipCall/ActualArrival")]
-        public object Set_ArrivalShipCall_ActualArrival(string path, object value)
+        public object Set_ArrivalShipCall_ActualArrival(string path, Type type, object value, bool isNullable, ref bool isCommited)
         {
             throw new NotImplementedException();
         }
 
         [Path("/ArrivalShipCall/Location")]
-        public object Set_ArrivalShipCall_Location(string path, object value, bool isNullable, ref bool isCommited)
+        public object Set_ArrivalShipCall_Location(string path, Type type, object value, bool isNullable, ref bool isCommited)
         {
             throw new NotImplementedException();
         }
 
         [Path("/ArrivalShipCall/Location/ID_LOCATION")]
-        public object Set_ArrivalShipCall_Location_ID_LOCATION(string path, object value)
+        public object Set_ArrivalShipCall_Location_ID_LOCATION(string path, Type type, object value, bool isNullable, ref bool isCommited)
         {
             throw new NotImplementedException();
         }
 
         [Path("/ArrivalShipCall/Location/Name")]
-        public object Set_ArrivalShipCall_Location_Name(string path, object value)
+        public object Set_ArrivalShipCall_Location_Name(string path, Type type, object value, bool isNullable, ref bool isCommited)
         {
             throw new NotImplementedException();
         }
 
         [Path("/ArrivalShipCall/Location/Type")]
-        public object Set_ArrivalShipCall_Location_Type(string path, object value)
+        public object Set_ArrivalShipCall_Location_Type(string path, Type type, object value, bool isNullable, ref bool isCommited)
         {
             throw new NotImplementedException();
         }
 
         [Path("/ArrivalShipCall/Location/Unlocode")]
-        public object Set_ArrivalShipCall_Location_Unlocode(string path, object value)
+        public object Set_ArrivalShipCall_Location_Unlocode(string path, Type type, object value, bool isNullable, ref bool isCommited)
         {
             throw new NotImplementedException();
         }
 
         [Path("/DepartureShipCall")]
-        public object Set_DepartureShipCall(string path, object value, bool isNullable, ref bool isCommited)
+        public object Set_DepartureShipCall(string path, Type type, object value, bool isNullable, ref bool isCommited)
         {
             throw new NotImplementedException();
         }
 
         [Path("/DepartureShipCall/ID_LINE")]
-        public object Set_DepartureShipCall_ID_LINE(string path, object value)
+        public object Set_DepartureShipCall_ID_LINE(string path, Type type, object value, bool isNullable, ref bool isCommited)
         {
             throw new NotImplementedException();
         }
 
         [Path("/DepartureShipCall/ID_ROUTE")]
-        public object Set_DepartureShipCall_ID_ROUTE(string path, object value)
+        public object Set_DepartureShipCall_ID_ROUTE(string path, Type type, object value, bool isNullable, ref bool isCommited)
         {
             throw new NotImplementedException();
         }

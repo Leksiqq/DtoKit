@@ -18,20 +18,20 @@
 /// Absolute path from the root of the object tree
 /// </para>
 /// </param>
+/// <param name="type">
+/// <para xml:lang="ru">
+/// Номинальный тип свойства
+/// </para>
+/// <para xml:lang="en">
+/// Nominal property type
+/// </para>
+/// </param>
 /// <param name="value">
 /// <para xml:lang="ru">
 /// Текущее значение свойства
 /// </para>
 /// <para xml:lang="en">
 /// The current value of the property
-/// </para>
-/// </param>
-/// <param name="isNullable">
-/// <para xml:lang="ru">
-/// Указывает, может ли быть присвоено значение <code>null</code>
-/// </para>
-/// <para xml:lang="en">
-/// Indicates whether <code>null</code> can be assigned
 /// </para>
 /// </param>
 /// <param name="isCommited">
@@ -55,4 +55,4 @@
 /// New or old property value.
 /// </para>
 /// </returns>
-public delegate object ValueSetter(string path, object? value, bool isNullable, ref bool isCommited);
+public delegate object? ValueSetter(string path, Type type, object? value, ref bool isCommited);

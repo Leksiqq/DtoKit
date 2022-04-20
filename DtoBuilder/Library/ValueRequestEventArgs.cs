@@ -44,6 +44,16 @@ public class ValueRequestEventArgs : EventArgs
 
     /// <summary>
     /// <para xml:lang="ru">
+    /// Тип объекта корневого уровня
+    /// </para>
+    /// <para xml:lang="en">
+    /// Type of the root level object
+    /// </para>
+    /// </summary>
+    public Type RootType { get; internal set; } = null!;
+
+    /// <summary>
+    /// <para xml:lang="ru">
     /// Значение текущего узла или листа дерева объекта
     /// </para>
     /// <para xml:lang="en">
@@ -58,29 +68,26 @@ public class ValueRequestEventArgs : EventArgs
         }
         set
         {
-            if (IsCommited)
-            {
-                throw new InvalidOperationException("Request is already commited.");
-            }
             if(!IsNullable && value is null)
             {
                 throw new InvalidOperationException($"At not nullable request \"{ Path }\" null can not be assigned.");
             }
             if (!IsLeaf)
             {
-                if(IsNullable)
+                if(value is null)
                 {
-                    _isReset = value is null;
-                    IsCommited = value is null;
+                    _isReset = true;
                 }
-                if (!_isReset && !object.ReferenceEquals(value, _target))
+                else if (!object.ReferenceEquals(value, _target))
                 {
                     _target = value!;
+                    _isReset = false;
                 }
             }
             else
             {
                 _propertyNode.PropertyInfo!.SetValue(_target, value);
+                IsCommited = true;
             }
         }
     }
@@ -143,23 +150,6 @@ public class ValueRequestEventArgs : EventArgs
     /// Signals that the current object tree node has been commited
     /// </para>
     /// </summary>
-    public bool IsCommited { get; private set; } = false;
-
-    /// <summary>
-    /// <para xml:lang="ru">
-    /// Завершает текущий узел дерева объекта
-    /// </para>
-    /// <para xml:lang="en">
-    /// Commits the current node of the object tree
-    /// </para>
-    /// </summary>
-    public void Commit()
-    {
-        if (IsCommited)
-        {
-            throw new InvalidOperationException("Request is already confirmed.");
-        }
-        IsCommited = true;
-    }
+    public bool IsCommited { get; set; } = false;
 
 }
