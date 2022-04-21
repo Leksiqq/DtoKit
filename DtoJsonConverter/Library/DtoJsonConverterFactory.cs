@@ -35,20 +35,10 @@ public class DtoJsonConverterFactory : JsonConverterFactory
     private bool _used = false;
     private bool _useEndOfDataNull = true;
     private bool _withMagic = false;
-    private PropertiesProcessingKind _propertiesProcessingKind = PropertiesProcessingKind.OnlyKeysForRepeats;
+    private KeysProcessing _keysProcessing = KeysProcessing.OnlyKeysForRepeats;
 
     internal TypesForest TypesForest { get; init; }
 
-    /// <summary>
-    /// <para xml:lang="en">
-    /// Пул объектов удалённых из списков или бывших значением свойства, которому при новой 
-    /// десериализации был присвоен null;
-    /// </para>
-    /// <para xml:lang="en">
-    /// The pool of objects removed from the lists or the former value of the property, which, with the new
-    /// deserialization was set to null;
-    /// </para>
-    /// </summary>
     internal Dictionary<Type, List<object>> ObjectsPool { get; init; } = new();
 
     /// <summary>
@@ -137,30 +127,30 @@ public class DtoJsonConverterFactory : JsonConverterFactory
     /// <summary>
     /// <para xml:lang="ru">
     /// СВойство, указывающее, как будут обрабатываться свойства сериализуемых объектов:
-    /// <see cref="PropertiesProcessingKind.OnlyKeysForRepeats"/>: все записываемые свойства попадут в результирующий JSON, если ссылка на объект 
+    /// <see cref="KeysProcessing.OnlyKeysForRepeats"/>: все записываемые свойства попадут в результирующий JSON, если ссылка на объект 
     /// встретилась впервые и только ключевые свойства в остальных случаях (установлено по умолчанию);
-    /// <see cref="PropertiesProcessingKind.AllProperties"/>: все записываемые свойства попадут в результирующий JSON;
-    /// <see cref="PropertiesProcessingKind.OnlyKeys"/>: только ключевые свойства попадут в результирующий JSON. (Полезно для запросов с клиента, который работает
+    /// <see cref="KeysProcessing.Usual"/>: все записываемые свойства попадут в результирующий JSON;
+    /// <see cref="KeysProcessing.OnlyKeys"/>: только ключевые свойства попадут в результирующий JSON. (Полезно для запросов с клиента, который работает
     /// с интерфейсами и знать не хочет ни о каких ключах).
     /// В случае, когда передаются только ключевые свойства, в JSON также добавляется служебное специальное поле <code>"$keyOnly": true</code>
     /// </para>
     /// <para xml:lang="en">
     /// A property indicating how the properties of serialized objects will be processed:
-    /// <see cref="PropertiesProcessingKind.OnlyKeysForRepeats"/>: all writeable properties will be in the resulting JSON if the object reference
+    /// <see cref="KeysProcessing.OnlyKeysForRepeats"/>: all writeable properties will be in the resulting JSON if the object reference
     /// met for the first time and only key properties in other cases (set by default);
-    /// <see cref="PropertiesProcessingKind.AllProperties"/>: all writeable properties will be included in the resulting JSON;
-    /// <see cref="PropertiesProcessingKind.OnlyKeys"/>: Only key properties will be included in the resulting JSON. (Useful for requests from a client that is running
+    /// <see cref="KeysProcessing.Usual"/>: all writeable properties will be included in the resulting JSON;
+    /// <see cref="KeysProcessing.OnlyKeys"/>: Only key properties will be included in the resulting JSON. (Useful for requests from a client that is running
     /// with interfaces and doesn't want to know about any keys).
     /// In the case when only key properties are passed, a service special field <code>"$keyOnly": true</code> is also added to JSON
     /// </para>
     /// </summary>
-    public PropertiesProcessingKind PropertiesProcessingKind
+    public KeysProcessing KeysProcessing
     {
-        get => _propertiesProcessingKind;
+        get => _keysProcessing;
         set
         {
             CheckUsed();
-            _propertiesProcessingKind = value;
+            _keysProcessing = value;
         }
     }
 
@@ -188,14 +178,14 @@ public class DtoJsonConverterFactory : JsonConverterFactory
 
     /// <summary>
     /// <para xml:lang="ru">
-    /// При повторном использовании <see cref="DtoJsonConverterFactory"/> с установленным в <see cref="PropertiesProcessingKind.OnlyKeys"/> 
-    /// свойством <see cref="PropertiesProcessingKind"/>
+    /// При повторном использовании <see cref="DtoJsonConverterFactory"/> с установленным в <see cref="KeysProcessing.OnlyKeys"/> 
+    /// свойством <see cref="KeysProcessing"/>
     /// следует очистить кеш, созданный для учёта повторяющихся объектов. (Скорее всего, не понадобится при использовании в ASP.NET, так как обычно сервис 
     /// будет регистрироваться как <code>Transient</code>
     /// </para>
     /// <para xml:lang="en">
-    /// When reusing <see cref="DtoJsonConverterFactory"/> with property set to <see cref="PropertiesProcessingKind.OnlyKeys"/>
-    /// <see cref="PropertiesProcessingKind"/>
+    /// When reusing <see cref="DtoJsonConverterFactory"/> with property set to <see cref="KeysProcessing.OnlyKeys"/>
+    /// <see cref="KeysProcessing"/>
     /// should clear the cache created to account for duplicate objects. (Probably not needed when used in ASP.NET, as a service usually
     /// will be registered as <code>Transient</code>
     /// </para>

@@ -69,7 +69,7 @@ public class DtoJsonConverterUnitTest
 
         DtoJsonConverterFactory converter = host.Services.GetRequiredService<DtoJsonConverterFactory>();
         converter.WithMagic = true;
-        converter.PropertiesProcessingKind = PropertiesProcessingKind.AllProperties;
+        converter.KeysProcessing = KeysProcessing.Usual;
         JsonSerializerOptions options = new() {WriteIndented = true };
         options.Converters.Add(converter);
 
@@ -79,7 +79,7 @@ public class DtoJsonConverterUnitTest
 
         converter = host.Services.GetRequiredService<DtoJsonConverterFactory>();
         converter.WithMagic = true;
-        converter.PropertiesProcessingKind = PropertiesProcessingKind.OnlyKeys;
+        converter.KeysProcessing = KeysProcessing.OnlyKeys;
         options = new() { WriteIndented = true };
         options.Converters.Add(converter);
         json = JsonSerializer.Serialize(shipCall, options);
@@ -185,7 +185,7 @@ public class DtoJsonConverterUnitTest
 
         DtoJsonConverterFactory converter = host.Services.GetRequiredService<DtoJsonConverterFactory>();
         converter.WithMagic = withMagic;
-        converter.PropertiesProcessingKind = withKeyOnly ? PropertiesProcessingKind.OnlyKeysForRepeats : PropertiesProcessingKind.AllProperties;
+        converter.KeysProcessing = withKeyOnly ? KeysProcessing.OnlyKeysForRepeats : KeysProcessing.Usual;
         var options = new JsonSerializerOptions { WriteIndented = true };
         options.Converters.Add(converter);
 
@@ -206,7 +206,7 @@ public class DtoJsonConverterUnitTest
 
         converter = converter = host.Services.GetRequiredService<DtoJsonConverterFactory>();
         converter.WithMagic = withMagic;
-        converter.PropertiesProcessingKind = withKeyOnly ? PropertiesProcessingKind.OnlyKeysForRepeats : PropertiesProcessingKind.AllProperties;
+        converter.KeysProcessing = withKeyOnly ? KeysProcessing.OnlyKeysForRepeats : KeysProcessing.Usual;
 
         options = new JsonSerializerOptions { WriteIndented = true };
         options.Converters.Add(converter);
@@ -220,7 +220,7 @@ public class DtoJsonConverterUnitTest
 
         converter = converter = host.Services.GetRequiredService<DtoJsonConverterFactory>();
         converter.WithMagic = withMagic;
-        converter.PropertiesProcessingKind = withKeyOnly ? PropertiesProcessingKind.OnlyKeysForRepeats : PropertiesProcessingKind.AllProperties;
+        converter.KeysProcessing = withKeyOnly ? KeysProcessing.OnlyKeysForRepeats : KeysProcessing.Usual;
 
         options = new JsonSerializerOptions { WriteIndented = true };
         options.Converters.Add(converter);
@@ -239,7 +239,7 @@ public class DtoJsonConverterUnitTest
 
         converter = converter = host.Services.GetRequiredService<DtoJsonConverterFactory>();
         converter.WithMagic = withMagic;
-        converter.PropertiesProcessingKind = withKeyOnly ? PropertiesProcessingKind.OnlyKeysForRepeats : PropertiesProcessingKind.AllProperties;
+        converter.KeysProcessing = withKeyOnly ? KeysProcessing.OnlyKeysForRepeats : KeysProcessing.Usual;
 
         options = new JsonSerializerOptions { WriteIndented = true };
         options.Converters.Add(converter);
@@ -250,7 +250,7 @@ public class DtoJsonConverterUnitTest
 
         converter = converter = host.Services.GetRequiredService<DtoJsonConverterFactory>();
         converter.WithMagic = withMagic;
-        converter.PropertiesProcessingKind = PropertiesProcessingKind.OnlyKeys;
+        converter.KeysProcessing = KeysProcessing.OnlyKeys;
         options = new JsonSerializerOptions { WriteIndented = true };
         options.Converters.Add(converter);
         json = JsonSerializer.Serialize(res, options);

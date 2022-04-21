@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Data>
+	<table_table>
+		<table ID_PORT="VINCENT" Name="Sent-Vincent" />
+		<table ID_PORT="AARHUS" Name="AARHUS" />
+		<table ID_PORT="GOTEBORG" Name="Goteborg" />
+		<table ID_PORT="NYNASHAMN" Name="Nynashamn" />
+		<table ID_PORT="HELSINKI" Name="Helsinki" />
+		<table ID_PORT="STOCKHOLM" Name="Stockholm" />
+		<table ID_PORT="KOTKA" Name="Kotka" />
+		<table ID_PORT="NAANTALI" Name="Naantali" />
+		<table ID_PORT="VENTSPILS" Name="VENTSPILS" />
+		<table ID_PORT="TALLINN" Name="Tallinn" />
+		<table ID_PORT="RADICATEL" Name="RADICATEL" />
+		<table ID_PORT="ROTTERDAM" Name="Rotterdam" />
+		<table ID_PORT="TRONDHEIM" Name="Trondheim" />
+		<table ID_PORT="OSLO" Name="OSLO" />
+		<table ID_PORT="WALLHAMN" Name="WALLHAMN" />
+		<table ID_PORT="VARNA" Name="VARNA" />
+		<table ID_PORT="HEERENVEEN" Name="HEERENVEEN" />
+		<table ID_PORT="PIRAEUS" Name="PIRAEUS" />
+		<table ID_PORT="ST.JOHNS" Name="ST.JOHNS" />
+		<table ID_PORT="LONDON" Name="LONDON" />
+		<table ID_PORT="HAMBURG" Name="HAMBURG" />
+		<table ID_PORT="MALMO" Name="MALMO" />
+		<table ID_PORT="LIMASSOL" Name="LIMASSOL" />
+	</table_table>
+</Data>

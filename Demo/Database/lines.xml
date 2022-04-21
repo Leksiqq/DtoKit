@@ -1,0 +1,8 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Data>
+	<table_table>
+		<table ID_LINE="VKH" Name="Vodokhod Marine Shipping" />
+		<table ID_LINE="SSK" Name="Samurai Sakura Kharakiri Line" />
+		<table ID_LINE="AML" Name="Angry Master's Logistics" />
+	</table_table>
+</Data>

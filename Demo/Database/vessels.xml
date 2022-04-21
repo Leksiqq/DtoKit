@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Data>
+	<table_table>
+		<table ID_VESSEL="TANJA" Name="MV &quot;TANJA&quot;" ID_PORT="HEERENVEEN" Length="103.89" Width="16.0" Height="8.0" Brutto="3801.0" Netto="2050.0" CallSign="PHWV" />
+		<table ID_VESSEL="FINNEAGLE" Name="MV &quot;Finneagle&quot;" ID_PORT="HELSINKI" Length="188.3" Width="28.7" Height="15.1" Brutto="29841.0" Netto="9452.0" CallSign="SKUH" />
+		<table ID_VESSEL="FINNSUN" Name="MV &quot;Finnsun&quot;" ID_PORT="HELSINKI" Length="188.38" Width="26.51" Height="17.15" Brutto="28002.0" Netto="8400.0" CallSign="OJPA" />
+		<table ID_VESSEL="FINNLADY" Name="MV &quot;Finnlady&quot;" ID_PORT="HELSINKI" Length="218.8" Width="30.5" Height="16.15" Brutto="45923.0" Netto="15013.0" CallSign="OJMQ" />
+		<table ID_VESSEL="FINNMASTER" Name="MV &quot;FINNMASTER&quot;" ID_PORT="HELSINKI" Length="137.45" Width="22.28" Height="16.1" Brutto="11839.0" Netto="3552.0" CallSign="OJHU" />
+		<table ID_VESSEL="NORDIA." Name="MV &quot;Nordia&quot;" ID_PORT="PIRAEUS" Length="123.0" Width="19.0" Height="13.6" Brutto="7395.0" Netto="2218.0" CallSign="SZTT" />
+		<table ID_VESSEL="BORUSSIA" Name="BORUSSIA DORTMUND" ID_PORT="ST.JOHNS" Length="121.35" Width="18.2" Height="8.3" Brutto="6378.0" Netto="3998.0" CallSign="V2001" />
+		<table ID_VESSEL="VAERMLAND" Name="VAERMLAND" ID_PORT="LONDON" Length="133.6" Width="19.4" Height="9.45" Brutto="6434.0" Netto="3218.0" CallSign="VQTS9" />
+		<table ID_VESSEL="ALTELAND" Name="MV &quot;Alteland&quot;" ID_PORT="HAMBURG" Length="99.98" Width="16.5" Height="7.63" Brutto="2996.0" Netto="1398.0" CallSign="DPPL" />
+		<table ID_VESSEL="FINNTRADER" Name="MV &quot;Finntrader&quot;" ID_PORT="MALMO" Length="183.0" Width="28.7" Height="15.23" Brutto="33313.0" Netto="9993.0" CallSign="SKIJ" />
+		<table ID_VESSEL="LIVLAND" Name="LIVLAND" ID_PORT="HAMBURG" Length="134.4" Width="22.5" Height="11.3" Brutto="9981.0" Netto="6006.0" CallSign="DDUE2" />
+		<table ID_VESSEL="MERCHANT" Name="MV &quot;Merchant&quot;" ID_PORT="LONDON" Length="155.0" Width="24.95" Height="16.9" Brutto="21195.0" Netto="6359.0" CallSign="MCMF3" />
+		<table ID_VESSEL="MARGARETHA" Name="MARGARETHA" ID_PORT="LIMASSOL" Length="134.44" Width="22.5" Height="11.3" Brutto="9981.0" Netto="6006.0" CallSign="P3CJ9" />
+		<table ID_VESSEL="KILMORE" Name="KILMORE" ID_PORT="VARNA" Length="151.0" Width="24.3" Height="7.75" Brutto="14471.0" Netto="4341.0" CallSign="LZRL" />
+		<table ID_VESSEL="GOETALAND" Name="MV &quot;Goetaland&quot;" ID_PORT="HAMBURG" Length="137.5" Width="21.3" Height="9.36" Brutto="7519.0" Netto="3570.0" CallSign="DHLK" />
+		<table ID_VESSEL="TAVASTLAND" Name="TAVASTLAND" ID_PORT="LONDON" Length="137.5" Width="21.3" Height="9.36" Brutto="7519.0" Netto="3570.0" CallSign="MBNL6" />
+		<table ID_VESSEL="ROGALAND" Name="MV &quot;Rogaland&quot;" ID_PORT="HEERENVEEN" Length="133.6" Width="19.4" Height="9.45" Brutto="6474.0" Netto="3218.0" CallSign="PJSV" />
+		<table ID_VESSEL="FINNPARTNER" Name="MV &quot;Finnpartner&quot;" ID_PORT="MALMO" Length="183.0" Width="28.7" Height="15.23" Brutto="33313.0" Netto="9993.0" CallSign="SKIH" />
+		<table ID_VESSEL="MAIKE D" Name="MAIKE D" ID_PORT="LONDON" Length="133.24" Width="18.7" Height="9.3" Brutto="6326.0" Netto="3251.0" CallSign="ZIXT7" />
+		<table ID_VESSEL="ANTJE" Name="MV &quot;ANTJE&quot;" ID_PORT="HAMBURG" Length="118.25" Width="17.9" Height="9.2" Brutto="5056.0" Netto="2530.0" CallSign="DARB" />
+	</table_table>
+</Data>

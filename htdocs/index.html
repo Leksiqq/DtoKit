@@ -49,6 +49,18 @@ tr td:first-child {
   width: 0;
   white-space: nowrap;
 }
+
+table.members {
+    border-collapse: collapse;
+}
+table.members td {
+    border: 1px solid black;
+    padding: 5px;
+}
+table:not(.members) td {
+    border: initial;
+    padding: 5px;
+}
 </style>
 </head>
 <body>
@@ -269,7 +281,7 @@ tr td:first-child {
     </table>
             
     <p>
-        Дерево интерфейса <code>IShipCallAdditionalInfo</code> выглядит так  (имена узлов опущены для простоты восприятия):
+        Дерево интерфейса <code>IShipCallAdditionInfo</code> выглядит так  (имена узлов опущены для простоты восприятия):
     </p>
     <img src="interface_tree_2.jpg"/>
 
@@ -340,11 +352,10 @@ tr td:first-child {
      <p>
          Члены:
      </p>
-     <ul>
-        <table>
+        <table class="members">
             <tr>
                 <td valign="top">
-                     <li><code>public Type RootType { get; }</code></li>
+                     <code>public Type RootType { get; }</code>
                 </td>
                 <td valign="top">
                      тип запрошенного интерфейса
@@ -352,7 +363,7 @@ tr td:first-child {
             </tr>
             <tr>
                 <td valign="top">
-                     <li><code>public string Path { get; }</code></li>
+                     <code>public string Path { get; }</code>
                 </td>
                 <td valign="top">
                      путь от корня дерева <b>класса</b> - имена свойств через /
@@ -360,7 +371,7 @@ tr td:first-child {
             </tr>
             <tr>
                 <td valign="top">
-                     <li><code>public bool IsNullable { get; }</code></li>
+                     <code>public bool IsNullable { get; }</code>
                 </td>
                 <td valign="top">
                      указывает на возможность присвоить свойству значение <code>null</code>. Основывается на наличии ? в типе свойства;
@@ -369,7 +380,7 @@ tr td:first-child {
             </tr>
             <tr>
                 <td valign="top">
-                     <li><code>public bool IsLeaf { get; }</code></li>
+                     <code>public bool IsLeaf { get; }</code>
                 </td>
                 <td valign="top">
                      указывает, что текущий узел в дереве интерфейса является листом. Это означает, что его тип не был зарегистрирован при вызове 
@@ -378,7 +389,7 @@ tr td:first-child {
             </tr>
             <tr>
                 <td valign="top">
-                     <li><code>public Type NominalType { get; }</code></li>
+                     <code>public Type NominalType { get; }</code>
                 </td>
                 <td valign="top">
                      тип свойства текущего узла в дереве интерфейса
@@ -386,7 +397,7 @@ tr td:first-child {
             </tr>
             <tr>
                 <td valign="top">
-                     <li><code>public object? Value { get; set; }</code></li>
+                     <code>public object? Value { get; set; }</code>
                 </td>
                 <td valign="top">
                      возвращает текущее значение свойства и служит для присвоения нового значения. В случае узла объект уже предоставлен
@@ -394,14 +405,13 @@ tr td:first-child {
             </tr>
             <tr>
                 <td valign="top">
-                     <li><code>public bool IsCommited { get; set; }</code></li>
+                     <code>public bool IsCommited { get; set; }</code>
                 </td>
                 <td valign="top">
                      при присвоении значения <code>true</code> узлы и листья поддерева с корнем в данном узле пропускаются.
                 </td>
             </tr>
         </table>
-    </ul>
     <p>
         В случае узла можно никаких действий не предпринимать, так как объект уже присвоен. В случае листа необходимо явно присвоить значение свойству <code>Value</code>, 
         иначе возникнет исключение.
@@ -415,11 +425,10 @@ tr td:first-child {
     </p>
     <script src="https://gist.github.com/Leksiqq/b616025960875d69f1f637e418ca6cea.js"></script>
 
-    <ul>
-        <table>
+        <table class="members">
             <tr>
                 <td valign="top">
-                     <li><code>[Startup]</code></li>
+                     <code>[Startup]</code>
                 </td>
                 <td valign="top">
                      необязательный метод, который в случае наличия вызывается перед началом построения объекта
@@ -427,7 +436,7 @@ tr td:first-child {
             </tr>
             <tr>
                 <td valign="top">
-                    <li><code>[Shutdown]</code></li>
+                    <code>[Shutdown]</code>
                 </td>
                 <td valign="top">
                     необязательный метод, который в случае наличия вызывается после окончания построения объекта
@@ -435,7 +444,7 @@ tr td:first-child {
             </tr>
             <tr>
                 <td valign="top">
-                    <li><code>[Before]</code></li>
+                    <code>[Before]</code>
                 </td>
                 <td valign="top">
                     необязательный метод, который в случае наличия вызывается перед запросом значения каждого узла или листа
@@ -443,7 +452,7 @@ tr td:first-child {
             </tr>
             <tr>
                 <td valign="top">
-                    <li><code>[After]</code></li>
+                    <code>[After]</code>
                 </td>
                 <td valign="top">
                     необязательный метод, который в случае наличия вызывается после запроса значения каждого узла или листа
@@ -451,7 +460,7 @@ tr td:first-child {
             </tr>
             <tr>
                 <td valign="top">
-                    <li><code>[Path("/...")]</code></li>
+                    <code>[Path("/...")]</code>
                 </td>
                 <td valign="top">
                      метод, обязательный для листьев и необязательный для узлов. Если определён для узла, должен возвращать значение аргумента <code>value</code>, если
@@ -461,15 +470,13 @@ tr td:first-child {
                 </td>
             </tr>
         </table>
-    </ul>
     <p>
         Параметры для методов, отмеченных <code>[Before]</code>, <code>[After]</code>, <code>[Path("/...")]</code>:
     </p>
-    <ul>
-        <table>
+        <table class="members">
             <tr>
                 <td valign="top">
-                     <li><code>string path</code></li>
+                     <code>string path</code>
                 </td>
                 <td valign="top">
                      путь от корня дерева класса
@@ -477,7 +484,7 @@ tr td:first-child {
             </tr>
             <tr>
                 <td valign="top">
-                    <li><code>Type type</code></li>
+                    <code>Type type</code>
                 </td>
                 <td valign="top">
                     тип свойства текущего узла в дереве интерфейса
@@ -485,7 +492,7 @@ tr td:first-child {
             </tr>
             <tr>
                 <td valign="top">
-                    <li><code>object? value</code></li>
+                    <code>object? value</code>
                 </td>
                 <td valign="top">
                     исходное значение свойства текущего узла. Для листа имеет значение <code>default</code>. Следует иметь в виду, что если свойство-лист имеет какое-то значение
@@ -494,7 +501,7 @@ tr td:first-child {
             </tr>
             <tr>
                 <td valign="top">
-                    <li><code>bool isLeaf</code></li>
+                    <code>bool isLeaf</code>
                 </td>
                 <td valign="top">
                     указывает, что текущий узел в дереве интерфейса является листом. Это означает, что его тип не был зарегистрирован при вызове 
@@ -503,7 +510,7 @@ tr td:first-child {
             </tr>
             <tr>
                 <td valign="top">
-                    <li><code>bool isNullable</code></li>
+                    <code>bool isNullable</code>
                 </td>
                 <td valign="top">
                     указывает на возможность присвоить свойству значение <code>null</code>. Основывается на наличии ? в типе свойства;
@@ -512,14 +519,13 @@ tr td:first-child {
             </tr>
             <tr>
                 <td valign="top">
-                    <li><code>ref bool isCommited</code></li>
+                    <code>ref bool isCommited</code>
                 </td>
                 <td valign="top">
                     при присвоении значения <code>true</code> узлы и листья поддерева с корнем в данном узле пропускаются.
                 </td>
             </tr>
         </table>
-    </ul>
 
     <a name="DtoJsonConverterFactory"/>
     <h2>DtoJsonConverterFactory</h2>
@@ -531,7 +537,7 @@ tr td:first-child {
     </p>
     <ul>
         <li>
-            при сериализации записывает в результирующий Json только лючевые свойства и свойства, соответствующие дереву запрошенного интерфейса
+            при сериализации записывает в результирующий Json только ключевые свойства и свойства, соответствующие дереву запрошенного интерфейса
         </li>
         <li>
             по умолчанию включен режим сериализации , при котором уже сериализованные объекты записываются в Json только ключевыми свойствами
@@ -541,6 +547,12 @@ tr td:first-child {
         </li>
         <li>
             не дублирует объекты при десериализации
+        </li>
+        <li>
+            Значения перечислимых типов (<code>enum</code>) автоматически сериализует/десериализует по именам
+        </li>
+        <li>
+            В зависимости от настроек может переписывать, дополнять и обновлять целевую коллекцию объектов при десериализации Json-массива
         </li>
     </ul>
     <p>
@@ -555,22 +567,126 @@ tr td:first-child {
     <p>
         Свойства, используемые только при сериализации:
         </p>
-        
-    <ul>
-        <table>
+
+        <table class="members">
             <tr>
                 <td valign="top">
-                     <li><code>string path</code></li>
+                     <code>public KeysProcessing KeysProcessing { get; set; }</code>
                 </td>
                 <td valign="top">
-                     путь от корня дерева класса
+                     Указывает, как поступать с ключевыми свойствами:
+                     <ul>
+                         <table>
+                             <tr>
+                                <td valign="top"><li><code>KeysProcessing.OnlyKeysForRepeats</code></li></td>
+                                <td valign="top">
+                                    для повторно сериализуемых объектов в рамках текущего Json 
+                                    выводятся только ключевые свойства и специальное поле <code>{..., "$keyOnly": true}</code> (по умолчанию)
+                                </td>
+                            </tr>
+                            <tr>
+                                <td valign="top"><li><code>KeysProcessing.Usual</code></li></td>
+                                <td valign="top">
+                                    сериализация обычным способом: все открытые для записи свойства <b>класса</b> выводятся в Json
+                                </td>
+                            </tr>
+                            <tr>
+                                <td valign="top"><li><code>KeysProcessing.OnlyKeys</code></li></td>
+                                <td valign="top">
+                                    выводятся только ключевые свойства и специальное поле <code>{..., "$keyOnly": true}</code>
+                                </td>
+                            </tr>
+                         </table>
+                         
+                     </ul>
+                     Значение этого поля уже нельзя поменять после запуска первой сериализации
+                </td>
+            </tr>
+            <tr>
+                <td valign="top">
+                    <code>public bool WithMagic</code>
+                </td>
+                <td valign="top">
+                    при присвоении значения <code>true</code> в каждый Json-объект добавляется специальное поле <code>{"$magic": "applied", ...}</code>.
+                    Это удобно для визуальнй проверки, что все нужные объекты сериализуются именно с помощью <code>DtoJsonConverterFactory</code>
                 </td>
             </tr>
         </table>
-    </ul>
 
     <a name="deserialization"/>
     <h3>Десериализация</h3>
+    <p>
+        Свойства, используемые только при десериализации:
+        </p>
+        <table class="members">
+            <tr>
+                <td valign="top">
+                     <code>public bool UseEndOfDataNull { get; set; }</code>
+                </td>
+                <td valign="top">
+                     при десериализации Json-массива верхнего уровня указывает на возможно частичное содержимое. Последний элемент очередного массива,
+                     равный <code>null</code> означает конец коллекции и устанавливает <code>IsEndOfData = true</code>. 
+                     Тот факт, что передача коллекции будет происходить частями сообщается клиенту отдельно, например, через http-заголовок
+                </td>
+            </tr>
+            <tr>
+                <td valign="top">
+                    <code>public bool IsEndOfData { get; }</code>
+                </td>
+                <td valign="top">
+                    значение <code>true</code> означает, что <code>UseEndOfDataNull == true</code> и пришёл <code>null</code>, то есть передача коллекции по частям
+                    завершена. Тот факт, что передача коллекции будет происходить частями сообщается клиенту отдельно, например, через http-заголовок
+                </td>
+            </tr>
+            <tr>
+                <td valign="top">
+                    <code>public object? Target { get; set; }</code>
+                </td>
+                <td valign="top">
+                    при присвоении объекта данному свойству Json десериализуется в него, вместо создания нового объекта. Не рекомендуется читать это свойство, 
+                    так как в процессе десериализации оно меняется непредсказуемо с точки зрения наблюдателя
+                </td>
+            </tr>
+        </table>
+        <p>
+            Также при десериализации Json-массива верхнего уровня можно использовать специальные фиктивные типы для управления заполнением целевой коллекции объектов.
+            В этом случае целевая коллекция обязательно должна существовать и перед десериализацией её нужно присвоить свойству <code>Target</code>. 
+            Фиктивный тип указывается в качестве параметра типа при вызове <code>JsonSerializer.Deserialize&lt;...&gt;(...)</code>. Возвращаемое значение такого вызова 
+            следует игнорировать, так как это просто заглушка, а фактически заполняется коллекция, предварительно присвоенная свойству <code>Target</code>. Смысл использования 
+            данной техники в том, чтобы работать на клиенте с <code>ObservableCollection</code>, связанной с интерфейсом пользователя.
+        </p>
+        <table class="members">
+            <tr>
+                <td valign="top">
+                     <code>RewritableListStub&lt;T&gt;</code>
+                </td>
+                <td valign="top">
+                    заполняет целевую коллекцию с начала, повторно использую уже содержащиеся в ней объекты, удаляя в конце лишние или добавляя недостающие
+                    <script src="https://gist.github.com/Leksiqq/04bc9a3e3edd14ca56c3c0fbbb19d16b.js"></script>
+                </td>
+            </tr>
+            <tr>
+                <td valign="top">
+                    <code>AppendableListStub&lt;T&gt;</code>
+                </td>
+                <td valign="top">
+                    добавляет объекты в конец целевой коллекции. Удобно для заполнения частями.
+                </td>
+            </tr>
+            <tr>
+                <td valign="top">
+                    <code>UpdateableListStub&lt;T&gt;</code>
+                </td>
+                <td valign="top">
+                    Обновляет объекты целевой коллекции, находя их по ключевым свойствам.
+                    <br/>
+                    Например, в в примере с дополнительной информацией по судозаходу, мы сначала загружаем судозаходы с пустой дополнительной информацией, а затем загружаем только
+                    дополнительную информацию, вписывая её в нужные строки. Так как дополнительная информация по легенде вычисляется медленно, пользователь не ждёт, а получает
+                    таблицу быстро, а потом видит и дополнительную информацию.
+                    <script src="https://gist.github.com/Leksiqq/a23481b0e4c3b960c3dbe4332be16a6d.js"></script>
+                </td>
+            </tr>
+        </table>
   </div>
    
 </body>

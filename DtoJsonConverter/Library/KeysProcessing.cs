@@ -8,7 +8,7 @@
 /// Types of how properties are handled during serialization and deserialization
 /// </para>
 /// </summary>
-public enum PropertiesProcessingKind
+public enum KeysProcessing
 {
     /// <summary>
     /// <para xml:lang="ru">
@@ -29,7 +29,7 @@ public enum PropertiesProcessingKind
     /// All writable properties will be included in the resulting JSON
     /// </para>
     /// </summary>
-    AllProperties,
+    Usual,
     /// <summary>
     /// <para xml:lang="ru">
     /// Только ключевые свойства попадут в результирующий JSON. (Полезно для запросов с клиента, который работает

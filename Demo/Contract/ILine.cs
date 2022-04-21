@@ -1,4 +1,4 @@
-﻿namespace DtoKitDemoContract;
+﻿namespace DtoKit.Demo;
 
 public interface ILine
 {

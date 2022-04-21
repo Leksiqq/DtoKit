@@ -40,7 +40,7 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
     public DtoConverter(DtoJsonConverterFactory factory)
     {
         _factory = factory;
-        if (_factory.PropertiesProcessingKind is PropertiesProcessingKind.OnlyKeysForRepeats)
+        if (_factory.KeysProcessing is KeysProcessing.OnlyKeysForRepeats)
         {
             _objectCache = new();
         }
@@ -338,7 +338,7 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
                     propertyPosition++;
                     if (propertyPosition > 0 && propertyPosition == typeNode.KeysCount)
                     {
-                        if (_factory.PropertiesProcessingKind is PropertiesProcessingKind.OnlyKeysForRepeats)
+                        if (_factory.KeysProcessing is KeysProcessing.OnlyKeysForRepeats)
                         {
                             key = typeNode.GetKey(value);
                             if (_objectCache!.TryGet(typeNode.Type, key!, out object? cachedObject))
@@ -349,7 +349,7 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
                                 break;
                             }
                         }
-                        else if (_factory.PropertiesProcessingKind is PropertiesProcessingKind.OnlyKeys)
+                        else if (_factory.KeysProcessing is KeysProcessing.OnlyKeys)
                         {
                             writer.WritePropertyName(KeyOnlyPropertyName);
                             writer.WriteBooleanValue(true);
@@ -359,7 +359,7 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
                     }
                 }
             }
-            if (_factory.PropertiesProcessingKind is PropertiesProcessingKind.OnlyKeysForRepeats && key is { })
+            if (_factory.KeysProcessing is KeysProcessing.OnlyKeysForRepeats && key is { })
             {
                 _objectCache!.Add(typeNode.Type, key, value);
             }

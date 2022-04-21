@@ -1,8 +1,8 @@
-﻿namespace DtoKitDemoContract;
+﻿namespace DtoKit.Demo;
 
-public interface IShipCallForList
+public interface IShipCall
 {
-    IRouteForShipCallList Route { get; }
+    IRoute Route { get; }
 
     string Voyage { get; }
 

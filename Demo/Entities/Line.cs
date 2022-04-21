@@ -1,8 +1,6 @@
-﻿
-using DtoKitDemoContract;
-using Net.Leksi.Dto;
+﻿using Net.Leksi.Dto;
 
-namespace DtoKitDemoEntities;
+namespace DtoKit.Demo;
 
 public class Line: ILine
 {
