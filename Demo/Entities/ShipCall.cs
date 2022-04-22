@@ -20,6 +20,9 @@ public class ShipCall: IShipCall, IShipCallForList, IShipCallAdditionInfo
     public DateTime? Departure { get; set; }
 
     public string AdditionalInfo { get; set; }
+
+    public ShipCall? PrevCall { get; set; }
+
     IRoute IShipCall.Route => Route;
 
     IRouteForShipCallList IShipCallForList.Route => Route;
@@ -27,4 +30,6 @@ public class ShipCall: IShipCall, IShipCallForList, IShipCallAdditionInfo
     IPort IShipCall.Port => Port;
 
     IPort IShipCallForList.Port => Port;
+
+    IShipCall? IShipCall.PrevCall => PrevCall;
 }

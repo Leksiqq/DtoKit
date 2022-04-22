@@ -66,7 +66,7 @@ internal class ListDeserializer<T> : JsonConverter<ListStub<T>> where T : class
             _keyComparer = new KeyEqualityComparer();
             _keysMap = new Dictionary<int, object[]>();
             _typeNode = _factory.TypesForest.GetTypeNode(typeof(T));
-            _objectCache = new ObjectCache();
+            _objectCache = new ObjectCache(_factory.TypesForest);
         }
         if (_factory.Target is null || !typeof(IList).IsAssignableFrom(_factory.Target.GetType()) || reader.TokenType != JsonTokenType.StartArray)
         {
@@ -174,11 +174,11 @@ internal class ListDeserializer<T> : JsonConverter<ListStub<T>> where T : class
         for (int i = _objectCache!.Count; i < result.Count; i++)
         {
             object[] itemKey = _typeNode!.GetKey(result[i]!)!;
-            _objectCache.Add(typeof(T), itemKey, result[i]!);
+            _objectCache.Add(result[i].GetType(), itemKey, result[i]!);
         }
-        if (_objectCache.TryGet(typeof(T), key, out object? item))
+        if (_objectCache.TryGet(updateableProbe.GetType(), key, out object? item))
         {
-            _factory.TypesForest.Copy(typeof(T), updateableProbe, item!);
+            _factory.TypesForest.Copy(updateableProbe.GetType(), updateableProbe, item!);
         }
     }
 

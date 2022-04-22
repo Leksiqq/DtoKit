@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using Microsoft.Extensions.DependencyInjection;
+using System.Collections;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -27,8 +28,6 @@ namespace Net.Leksi.Dto;
 public class DtoJsonConverterFactory : JsonConverterFactory
 {
 
-    internal event EventHandler? ObjectCachesClear;
-
     private readonly EventArgs _eventArgs = new();
 
     private object? _target = null;
@@ -36,6 +35,8 @@ public class DtoJsonConverterFactory : JsonConverterFactory
     private bool _useEndOfDataNull = true;
     private bool _withMagic = false;
     private KeysProcessing _keysProcessing = KeysProcessing.OnlyKeysForRepeats;
+
+    internal ObjectCache ObjectCache { get; init; }
 
     internal TypesForest TypesForest { get; init; }
 
@@ -174,6 +175,7 @@ public class DtoJsonConverterFactory : JsonConverterFactory
     public DtoJsonConverterFactory(TypesForest typesForest)
     {
         TypesForest = typesForest ?? throw new ArgumentNullException(nameof(typesForest)) ;
+        ObjectCache = TypesForest.ServiceProvider.GetService<ObjectCache>() ?? new ObjectCache(TypesForest);
     }
 
     /// <summary>
@@ -190,9 +192,9 @@ public class DtoJsonConverterFactory : JsonConverterFactory
     /// will be registered as <code>Transient</code>
     /// </para>
     /// </summary>
-    public void ClearCaches()
+    public void ClearCache()
     {
-        ObjectCachesClear?.Invoke(this, _eventArgs);
+        ObjectCache.Clear();
     }
 
 
@@ -242,7 +244,6 @@ public class DtoJsonConverterFactory : JsonConverterFactory
                     typeof(DtoConverter<>).MakeGenericType(new Type[] { typeToConvert }), 
                     args: new object[] { this }
                 )!;
-            ObjectCachesClear += ((IObjectCacheOwner)converter).OnObjectCachesClear;
         }
 
         return converter;

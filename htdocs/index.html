@@ -73,9 +73,9 @@ table:not(.members) td {
   <a href="#narrowing_interfaces">Сужающие интерфейсы</a>
   <a href="#DtoKit.Install"><code>DtoKit.Install(...)</code></a>
   <a href="#DtoBuilder">DtoBuilder</a>
-  <a class="indent1" href="#DtoBuilder.Build"><code>Build&lt;T&gt;()</code></a>
+  <a class="indent1" href="#DtoBuilder.Build"><code>Build&lt;T&gt;()</code> и <code>BuildOfType(Type type)</code></a>
   <a class="indent2" href="#ValueRequestEventArgs"><code>ValueRequestEventArgs</code></a>
-  <a class="indent1" href="#DtoBuilder.Build_helper"><code>Build&lt;T&gt;(helper)</code></a>
+  <a class="indent1" href="#DtoBuilder.Build_helper"><code>Build&lt;T&gt;(object helper)</code> и <code>BuildOfType(Type type, object helper)</code></a>
   <a href="#DtoJsonConverterFactory">DtoJsonConverterFactory</a>
   <a class="indent1" href="#serialization">Сериализация</a>
   <a class="indent1" href="#deserialization">Десериализация</a>
@@ -136,6 +136,12 @@ table:not(.members) td {
         Для класса <code>ShipCall</code> имеем следующее дерево (имена узлов опущены для простоты восприятия):
     </p>
     <img src="class_tree.jpg"/>
+
+<p>
+    Как видим, дерево класса может быть бесконечным. 
+</p>
+
+
     <a name="interface_tree"/>
     <h2>Дерево интерфейса</h2>
     <p>
@@ -199,6 +205,12 @@ table:not(.members) td {
         Например, дерево интерфейса <code>IShipCall</code> выглядит так  (имена узлов опущены для простоты восприятия):
     </p>
     <img src="interface_tree.jpg"/>
+
+    <p>
+        Как видим, дерево интерфейса тоже может быть бесконечным. 
+    </p>
+    
+
     <a name="narrowing_interfaces"/>
     <h2>Сужающие интерфейсы</h2>
     <p>
@@ -328,7 +340,7 @@ table:not(.members) td {
     </p>
     <ul>
         <li>Подписаться на событие <code>ValueRequest</code> и вызвать <a href="#DtoBuilder.Build"><code>Build&lt;T&gt;()</code></a></li>
-        <li>Вызвать <a href="#DtoBuilder.Build_helper"><code>Build&lt;T&gt;(helper)</code></a>, где <code>helper</code> - специальный объект</li>
+        <li>Вызвать <a href="#DtoBuilder.Build_helper"><code>Build&lt;T&gt;(object helper)</code></a>, где <code>helper</code> - специальный объект</li>
     </ul>
     <p>
         В обоих случаях метод вернёт построенный объект. Если нужно загрузить уже существующий объект, его нужно присвоить свойству <code>Target</code>. 
@@ -336,7 +348,7 @@ table:not(.members) td {
     </p>
 
     <a name="DtoBuilder.Build"/>
-    <h3><code>Build&lt;T&gt;()</code></h3>
+    <h3><code>Build&lt;T&gt;()</code> и <code>BuildOfType(Type type)</code></h3>
 
     <p>
         При использовании этого способа нужно подписаться на событие <code>ValueRequest</code>:
@@ -418,7 +430,7 @@ table:not(.members) td {
     </p>
 
     <a name="DtoBuilder.Build_helper"/>
-    <h3><code>Build&lt;T&gt;(helper)</code></h3>
+    <h3><code>Build&lt;T&gt;(object helper)</code> и <code>BuildOfType(Type type, object helper)</code></h3>
 
     <p>
         <code>helper</code> - объект произвольного класса, содержащий публичные методы, помеченные особыми атрибутами и имеющие особую метрику.
@@ -526,7 +538,49 @@ table:not(.members) td {
                 </td>
             </tr>
         </table>
+        <p>
+            <b>Важно!</b> Использование бесконечных деревьев интерфейсов ограничено! Если на пути от узла к корню встречается узел того же типа, то это ошибка, 
+            кроме случая, когда эти узлы - концы одного ребра. В этом случае ошибки нет, но загружаются только ключевые свойства. 
+        </p>
+        <p>
+            Например, можно написать программу, которая выведет все пути: 
+        </p>
+        <script src="https://gist.github.com/Leksiqq/cf71e40a782e22d4369702e62195ac92.js"></script>
+        <pre><code>/
+/ID_LINE
+/ID_SHIPCALL
+/AdditionalInfo
+/Arrival
+/Departure
+/Voyage
+/Port
+/Port/ID_PORT
+/Port/Name
+/PrevCall
+/PrevCall/ID_LINE
+/PrevCall/ID_SHIPCALL
+/Route
+/Route/ID_LINE
+/Route/ID_ROUTE
+/Route/Line
+/Route/Line/ID_LINE
+/Route/Line/Name
+/Route/Vessel
+/Route/Vessel/ID_VESSEL
+/Route/Vessel/Brutto
+/Route/Vessel/CallSign
+/Route/Vessel/Height
+/Route/Vessel/Length
+/Route/Vessel/Name
+/Route/Vessel/Netto
+/Route/Vessel/Width
+/Route/Vessel/Port
+/Route/Vessel/Port/ID_PORT
+/Route/Vessel/Port/Name</code></pre>
 
+<p>
+    Видим, что для <code>PrevCall</code> запрашиваются только ключи.
+</p>
     <a name="DtoJsonConverterFactory"/>
     <h2>DtoJsonConverterFactory</h2>
     <p>

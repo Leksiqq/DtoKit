@@ -5,6 +5,8 @@ using Net.Leksi.Dto;
 using NUnit.Framework;
 using System;
 using System.Data.Common;
+using System.Globalization;
+using System.Threading;
 
 namespace TestProject1
 {
@@ -23,71 +25,12 @@ namespace TestProject1
         }
 
         [Test]
-        public void Test1()
-        {
-            Database db = new();
-            DbDataReader dr = db.GetLines();
-
-            while (dr.Read())
-            {
-                Console.WriteLine(dr["ID_LINE"] + ", " + dr["Name"]);
-            }
-
-
-            dr = db.GetLine("SSK");
-
-            if (dr.Read())
-            {
-                Console.WriteLine(dr["ID_LINE"] + ", " + dr["Name"]);
-            }
-
-            dr = db.GetLine("JJP");
-
-            if (dr.Read())
-            {
-                Console.WriteLine(dr["ID_LINE"] + ", " + dr["Name"]);
-            }
-            else
-            {
-                Console.WriteLine("not found");
-            }
-
-            dr = db.GetPorts();
-            while (dr.Read())
-            {
-                Console.WriteLine(dr["ID_PORT"] + ", " + dr["Name"]);
-            }
-
-            dr = db.GetPort("OSLO");
-
-            if (dr.Read())
-            {
-                Console.WriteLine(dr["ID_PORT"] + ", " + dr["Name"]);
-            }
-            else
-            {
-                Console.WriteLine("not found");
-            }
-            dr = db.GetPort("TOKYO");
-
-            if (dr.Read())
-            {
-                Console.WriteLine(dr["ID_PORT"] + ", " + dr["Name"]);
-            }
-            else
-            {
-                Console.WriteLine("not found");
-            }
-
-            dr = db.GetVessels();
-            while (dr.Read())
-            {
-                Console.WriteLine(dr);
-            }
-        }
-
-        [Test]
-        public void Test2()
+        [TestCase(typeof(ILine))]
+        [TestCase(typeof(IPort))]
+        [TestCase(typeof(IVessel))]
+        [TestCase(typeof(IRoute))]
+        [TestCase(typeof(IShipCall))]
+        public void Test2(Type type)
         {
             DtoBuilder dtoBuilder = _host.Services.GetRequiredService<DtoBuilder>();
 
@@ -98,7 +41,7 @@ namespace TestProject1
                 arg.IsCommited = arg.IsLeaf;
             };
 
-            dtoBuilder.Build<IRoute>();
+            dtoBuilder.BuildOfType(type);
         }
     }
 }

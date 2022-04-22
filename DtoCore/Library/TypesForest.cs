@@ -77,11 +77,7 @@ public class TypesForest
     /// <returns></returns>
     public TypeNode GetTypeNode(Type type)
     {
-        if (!_typeTrees.ContainsKey(type))
-        {
-            PlantTypeTree(type);
-        }
-        return _typeTrees[type];
+        return GetTypeNode(type, null);
     }
 
     /// <summary>
@@ -180,8 +176,22 @@ public class TypesForest
         }
     }
 
-    private bool PlantTypeTree(Type type)
+    private TypeNode GetTypeNode(Type type, Stack<Type> stack)
     {
+        if (!_typeTrees.ContainsKey(type))
+        {
+            if(stack is null)
+            {
+                stack = new Stack<Type>();
+            }
+            PlantTypeTree(type, stack);
+        }
+        return _typeTrees[type];
+    }
+
+    private bool PlantTypeTree(Type type, Stack<Type> stack)
+    {
+        stack.Push(type);
         if (!ServiceProvider.IsRegistered(type))
         {
             throw new ArgumentException($"{type} is not registered.");
@@ -195,30 +205,30 @@ public class TypesForest
                 if (result)
                 {
                     _typeTrees[type] = new TypeNode { Type = type, ChildNodes = new List<PropertyNode>() };
-                    List<Type> antiLoop = new() { type };
-                    ConfigureTypeNode(_typeTrees[type], antiLoop);
+                    ConfigureTypeNode(_typeTrees[type], stack);
 
                     _typeTrees[type].ValueRequests = new List<ValueRequest>();
-                    CollectValueRequests(_typeTrees[type], _typeTrees[type].ValueRequests!);
+                    CollectValueRequests(_typeTrees[type], _typeTrees[type].ValueRequests!, stack);
                 }
             }
         }
+        stack.Pop();
         return result;
     }
 
-    private void ConfigureTypeNode(TypeNode typeNode, List<Type> antiLoop)
+    private void ConfigureTypeNode(TypeNode typeNode, Stack<Type> stack)
     {
         List<PropertyInfo> properties = new();
-        CollectProperties(typeNode, properties, antiLoop);
+        CollectProperties(typeNode, properties);
 
         typeNode.ActualType = ServiceProvider.GetRequiredService(typeNode.Type).GetType();
         List<PropertyInfo> actualProperties = new();
-        CollectActualProperties(typeNode, actualProperties, antiLoop);
+        CollectActualProperties(typeNode, actualProperties);
 
-        CollectChildNodes(typeNode, properties, actualProperties, antiLoop);
+        CollectChildNodes(typeNode, properties, actualProperties, stack);
     }
 
-    private void CollectValueRequests(TypeNode typeNode, List<ValueRequest> requests)
+    private void CollectValueRequests(TypeNode typeNode, List<ValueRequest> requests, Stack<Type> stack)
     {
         StringBuilder path = new();
         if(path.Length == 0)
@@ -241,7 +251,16 @@ public class TypesForest
             requests.Add(request);
             if (!propertyNode.IsLeaf)
             {
-                foreach(ValueRequest req in propertyNode.TypeNode.ValueRequests!)
+                if(propertyNode.TypeNode.ValueRequests is null)
+                {
+                    var stackReverse = stack.ToList();
+                    stackReverse.Reverse();
+                    string stackView = string.Join(Slash, stackReverse);
+                    throw new Exception($"Loop detected: {stackView}");
+                }
+                List<ValueRequest> range = new();
+                int position = 0;
+                foreach (ValueRequest req in propertyNode.TypeNode.ValueRequests!)
                 {
                     if(req.Path != Slash)
                     {
@@ -253,10 +272,17 @@ public class TypesForest
                             PropertyNode = req.PropertyNode,
                             PopsCount = req.PopsCount
                         };
-                        requests.Add(request);
+                        range.Add(request);
                         path.Length = pathLength1;
+                        position++;
+                        if(ReferenceEquals(requests, propertyNode.TypeNode.ValueRequests) && position == typeNode.KeysCount)
+                        {
+                            break;
+                        }
+
                     }
                 }
+                requests.AddRange(range);
             }
             path.Length = pathLength;
         }
@@ -264,18 +290,14 @@ public class TypesForest
     }
 
     private void CollectChildNodes(TypeNode typeNode, List<PropertyInfo> properties, 
-        List<PropertyInfo> actualProperties, List<Type> antiLoop)
+        List<PropertyInfo> actualProperties, Stack<Type> stack)
     {
         foreach (PropertyInfo propertyInfo in actualProperties)
         {
             PropertyInfo? actualProperty = null;
             if (propertyInfo.GetCustomAttribute<KeyAttribute>() is KeyAttribute)
             {
-                if (propertyInfo.CanWrite)
-                {
-                    typeNode.KeysCount++;
-                    actualProperty = propertyInfo;
-                }
+                actualProperty = propertyInfo;
             }
             else if (propertyInfo.Name.Contains(Dot))
             {
@@ -317,7 +339,7 @@ public class TypesForest
                         : propertyInfo.Name,
                     PropertyInfo = actualProperty,
                     TypeNode = ServiceProvider.IsRegistered(propertyInfo.PropertyType) 
-                        ? GetTypeNode(propertyInfo.PropertyType) 
+                        ? GetTypeNode(propertyInfo.PropertyType, stack) 
                         : new TypeNode { Type = propertyInfo.PropertyType, ActualType = propertyInfo.PropertyType },
                     IsNullable = (propertyInfo.PropertyType.IsValueType && Nullable.GetUnderlyingType(propertyInfo.PropertyType) is Type)
                         || propertyInfo.GetCustomAttributes().Any(a => a.GetType().Name.Contains(_nullableAttributeName))
@@ -328,7 +350,7 @@ public class TypesForest
         typeNode.ChildNodes!.Sort(_propertyNodeComparer);
     }
 
-    private void CollectActualProperties(TypeNode typeNode, List<PropertyInfo> actualProperties, List<Type> antiLoop)
+    private void CollectActualProperties(TypeNode typeNode, List<PropertyInfo> actualProperties)
     {
         Type currentType = typeNode.ActualType;
         List<Type> considered = new();
@@ -336,9 +358,13 @@ public class TypesForest
         {
             foreach (PropertyInfo propertyInfo in currentType.GetProperties(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance))
             {
-                if (antiLoop.Contains(propertyInfo.PropertyType))
+                if (propertyInfo.GetCustomAttribute<KeyAttribute>() is KeyAttribute)
                 {
-                    throw new Exception($"Loop detected: {string.Join(Slash, antiLoop.Select(t => t.Name))}/{propertyInfo.PropertyType.Name}");
+                    if (!propertyInfo.CanWrite)
+                    {
+                        throw new Exception($"Key property must be writable: {propertyInfo}");
+                    }
+                    typeNode.KeysCount++;
                 }
                 actualProperties.Add(propertyInfo);
             }
@@ -346,7 +372,7 @@ public class TypesForest
         }
     }
 
-    private void CollectProperties(TypeNode typeNode, List<PropertyInfo> properties, List<Type> antiLoop)
+    private void CollectProperties(TypeNode typeNode, List<PropertyInfo> properties)
     {
         Queue<Type> queue = new();
         List<Type> considered = new();
@@ -364,10 +390,6 @@ public class TypesForest
             }
             foreach (PropertyInfo propertyInfo in subType.GetProperties())
             {
-                if (antiLoop.Contains(propertyInfo.PropertyType))
-                {
-                    throw new Exception($"Loop detected: {string.Join(Slash, antiLoop.Select(t => t.Name))}/{propertyInfo.PropertyType.Name}");
-                }
                 properties.Add(propertyInfo);
             }
         }

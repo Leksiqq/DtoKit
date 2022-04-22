@@ -13,4 +13,5 @@ public interface IShipCall
     DateTime ScheduledDeparture { get; }
     DateTime ActualDeparture { get; }
     ShipCallCondition Condition { get; }
+    IShipCall? prevCall { get; }
 }

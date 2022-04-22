@@ -18,7 +18,7 @@ namespace Net.Leksi.Dto;
 /// </para>
 /// </summary>
 /// <typeparam name="T"></typeparam>
-internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : class
+internal class DtoConverter<T> : JsonConverter<T> where T : class
 {
     private const string MagicPropertyName = "$magic";
     private const string MagicPropertyValue = "applied";
@@ -26,7 +26,6 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
     private const string KeyOnlyPropertyName = "$keyOnly";
 
     private readonly DtoJsonConverterFactory _factory;
-    private ObjectCache? _objectCache = null;
 
     /// <summary>
     /// <para xml:lang="ru">
@@ -40,25 +39,6 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
     public DtoConverter(DtoJsonConverterFactory factory)
     {
         _factory = factory;
-        if (_factory.KeysProcessing is KeysProcessing.OnlyKeysForRepeats)
-        {
-            _objectCache = new();
-        }
-    }
-
-    /// <summary>
-    /// <para xml:lang="ru">
-    /// Очищает кеш, созданный для учёта повторяющихся объектов при возникновении соотвествующего события.
-    /// </para>
-    /// <para xml:lang="en">
-    /// Clears the cache created to account for duplicate objects when the corresponding event occurs.
-    /// </para>
-    /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="args"></param>
-    public void OnObjectCachesClear(object? sender, EventArgs args)
-    {
-        _objectCache?.Clear();
     }
 
     #region Реализация JsonConverter<T>
@@ -74,10 +54,6 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
     /// </exception>
     public override T? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        if (_objectCache is null)
-        {
-            _objectCache = new();
-        }
         if (reader.TokenType == JsonTokenType.StartObject)
         {
 
@@ -122,7 +98,7 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
                 {
                     if (key is { })
                     {
-                        _objectCache.Add(typeNode.Type, key, item!);
+                        _factory.ObjectCache.Add(typeNode.Type, key, item!);
                     }
                     return item;
                 }
@@ -145,7 +121,7 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
                     {
                         if (propertyName == KeyOnlyPropertyName && obj.ValueKind is JsonValueKind.True)
                         {
-                            if (_objectCache.TryGet(typeNode.Type, key!, out object? cachedObject))
+                            if (_factory.ObjectCache.TryGet(typeNode.Type, key!, out object? cachedObject))
                             {
                                 if (_factory.ObjectsPool.TryGetValue(typeof(T), out List<object>? pool))
                                 {
@@ -341,7 +317,7 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
                         if (_factory.KeysProcessing is KeysProcessing.OnlyKeysForRepeats)
                         {
                             key = typeNode.GetKey(value);
-                            if (_objectCache!.TryGet(typeNode.Type, key!, out object? cachedObject))
+                            if (_factory.ObjectCache.TryGet(typeof(T), key!, out object? cachedObject))
                             {
                                 key = null;
                                 writer.WritePropertyName(KeyOnlyPropertyName);
@@ -361,7 +337,7 @@ internal class DtoConverter<T> : JsonConverter<T>, IObjectCacheOwner where T : c
             }
             if (_factory.KeysProcessing is KeysProcessing.OnlyKeysForRepeats && key is { })
             {
-                _objectCache!.Add(typeNode.Type, key, value);
+                _factory.ObjectCache.Add(typeof(T), key, value);
             }
             writer.WriteEndObject();
         }

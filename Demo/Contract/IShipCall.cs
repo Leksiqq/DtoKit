@@ -8,9 +8,11 @@ public interface IShipCall
 
     IPort Port { get; }
 
-    public DateTime? Arrival { get; }
+    DateTime? Arrival { get; }
 
-    public DateTime? Departure { get; }
+    DateTime? Departure { get; }
 
-    public string AdditionalInfo { get; }
+    string AdditionalInfo { get; }
+
+    IShipCall? PrevCall { get; }
 }

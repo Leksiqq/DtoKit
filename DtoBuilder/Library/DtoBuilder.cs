@@ -32,7 +32,7 @@ public class DtoBuilder
     private const string Under = "_";
 
     private readonly TypesForest _typesForest;
-    private readonly ObjectCache _objectCache = new();
+    private readonly ObjectCache _objectCache;
     private readonly Dictionary<Type, object> _probeObjects = new();
     private readonly Dictionary<Type, Dictionary<string, MethodInfo>> _helperMethods = new();
     private readonly Dictionary<object, ValueRequestEventHandler> _helperHandlers = new();
@@ -67,6 +67,7 @@ public class DtoBuilder
     public DtoBuilder(TypesForest typesForest)
     {
         _typesForest = typesForest ?? throw new ArgumentNullException(nameof(typesForest));
+        _objectCache = typesForest.ServiceProvider.GetService<ObjectCache>() ?? new ObjectCache(_typesForest);
     }
 
     /// <summary>
@@ -112,6 +113,52 @@ public class DtoBuilder
     /// </exception>
     public T? Build<T>(object helper) where T : class
     {
+        return (T)BuildOfType(typeof(T), helper);
+    }
+
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Строит объект с помощью объекта-хэлпера любого класса, в котором есть методы, имеющие сигнатуры специальных делегатов:
+    /// <see cref="BeforeOrAfterProcessor"/>, <see cref="ValueSetter"/>
+    /// и помечены специальными атрибутами:
+    /// <see cref="SetupAttribute"/>, <see cref="BeforeAttribute"/>, <see cref="PathAttribute"/>, <see cref="AfterAttribute"/>, 
+    /// <see cref="ShutdownAttribute"/>
+    /// </para>
+    /// <para xml:lang="en">
+    /// Constructs an object using a helper object of any class that has methods that have special delegate signatures:
+    /// <see cref="BeforeOrAfterProcessor"/>, <see cref="ValueSetter"/>
+    /// and are marked with special attributes:
+    /// <see cref="SetupAttribute"/>, <see cref="BeforeAttribute"/>, <see cref="PathAttribute"/>, <see cref="AfterAttribute"/>,
+    /// <see cref="ShutdownAttribute"/>
+    /// </para>
+    /// </summary>
+    /// <param name="type">
+    /// <para xml:lang="ru">
+    /// Интерфейс, применяемый для строительства
+    /// </para>
+    /// <para xml:lang="en">
+    /// Interface used for construction
+    /// </para>
+    /// </param>
+    /// <param name="helper"></param>
+    /// <returns>
+    /// <para xml:lang="ru">
+    /// Готовый объект
+    /// </para>
+    /// <para xml:lang="en">
+    /// Ready object
+    /// </para>
+    /// </returns>
+    /// <exception cref="ArgumentNullException">
+    /// <para xml:lang="ru">
+    /// Без хэлпера не работает
+    /// </para>
+    /// <para xml:lang="en">
+    /// Doesn't work without a helper
+    /// </para>
+    /// </exception>
+    public object? BuildOfType(Type type, object helper)
+    {
         if (helper is null)
         {
             throw new ArgumentNullException(nameof(helper));
@@ -125,7 +172,7 @@ public class DtoBuilder
             setup?.Invoke(helper, null);
         }
         ValueRequest += _helperHandlers[helper];
-        T? result = Build<T>();
+        object? result = BuildOfType(type);
         ValueRequest -= _helperHandlers[helper];
         if (_helperMethods[helper.GetType()].TryGetValue(ShutDown, out MethodInfo? shutdown))
         {
@@ -164,8 +211,41 @@ public class DtoBuilder
     /// </returns>
     public T? Build<T>() where T : class
     {
-        T? result = null;
-        PropertyNode root = new() { TypeNode = _typesForest.GetTypeNode(typeof(T)) };
+        return (T)BuildOfType(typeof(T));
+    }
+
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Строит объект с помощью хэндлера, имеющего сигнатуру делегата:
+    /// <see cref="ValueRequestEventHandler"/>
+    /// Перед вызовом следует подписаться на событие <see cref="ValueRequest"/>
+    /// </para>
+    /// <para xml:lang="en">
+    /// Builds an object using a handler that has a delegate signature:
+    /// <see cref="ValueRequestEventHandler"/>
+    /// Before calling, subscribe to the event <see cref="ValueRequest"/>
+    /// </para>
+    /// </summary>
+    /// <param name="type">
+    /// <para xml:lang="ru">
+    /// Интерфейс, применяемый для строительства
+    /// </para>
+    /// <para xml:lang="en">
+    /// Interface used for construction
+    /// </para>
+    /// </param>
+    /// <returns>
+    /// <para xml:lang="ru">
+    /// Готовый объект
+    /// </para>
+    /// <para xml:lang="en">
+    /// Ready object
+    /// </para>
+    /// </returns>
+    public object? BuildOfType(Type type)
+    {
+        object? result = null;
+        PropertyNode root = new() { TypeNode = _typesForest.GetTypeNode(type) };
         Stack<object?> targets = new();
         Stack<TypeNode?> typeNodes = new();
         ValueRequestEventArgs eventArgs = new();
@@ -173,7 +253,7 @@ public class DtoBuilder
         int skipTo = -1;
         int childPosition = 0;
         object[]? key = null;
-        eventArgs.RootType = typeof(T);
+        eventArgs.RootType = type;
         foreach (ValueRequest request in root.TypeNode.ValueRequests!)
         {
 
@@ -184,7 +264,7 @@ public class DtoBuilder
                 {
                     childPosition = 0;
                     object? target = null;
-                    if (request.PropertyNode.TypeNode.Type == typeof(T))
+                    if (request.PropertyNode.TypeNode.Type == type)
                     {
                         target = Target;
                     }
@@ -202,7 +282,7 @@ public class DtoBuilder
                     }
                     if (targets.Count == 0)
                     {
-                        result = (T)target;
+                        result = target;
                     }
                     else
                     {
@@ -221,7 +301,7 @@ public class DtoBuilder
                         }
                         else
                         {
-                            result = (T?)eventArgs.Value;
+                            result = eventArgs.Value;
                         }
                         targets.Push(eventArgs.Value);
                         _probeObjects.TryAdd(request.PropertyNode.TypeNode.Type, target);
@@ -267,7 +347,7 @@ public class DtoBuilder
             for (int i = request.PopsCount; i < 0; i++)
             {
                 object? target = targets.Pop();
-                if (key is { })
+                if (key is { } && target is { })
                 {
                     _objectCache.Add(typeNodes.Peek()!.Type, key, target!);
                     key = null;

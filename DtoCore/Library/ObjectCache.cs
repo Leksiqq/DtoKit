@@ -14,6 +14,7 @@ public class ObjectCache
 {
 
     private static readonly KeyEqualityComparer _keyComparer = new();
+    private readonly TypesForest _typesForest;
 
     private Dictionary<Type, Dictionary<object[], object>> _objectsCache = new();
 
@@ -26,6 +27,12 @@ public class ObjectCache
     /// </para>
     /// </summary>
     public int Count => _objectsCache.Count;
+
+    public ObjectCache(TypesForest typesForest) 
+    {
+        _typesForest = typesForest;
+    }
+
 
     /// <summary>
     /// <para xml:lang="ru">
@@ -114,8 +121,24 @@ public class ObjectCache
         if (!_objectsCache.ContainsKey(type))
         {
             _objectsCache.Add(type, new Dictionary<object[], object>(_keyComparer));
+            if (!_objectsCache.ContainsKey(value.GetType()))
+            {
+                _objectsCache[value.GetType()] = new Dictionary<object[], object>(_keyComparer);
+            }
         }
-        _objectsCache[type][key] = value;
+        if (!_objectsCache[type].ContainsKey(key))
+        {
+            if (_objectsCache[value.GetType()].ContainsKey(key))
+            {
+                _typesForest.Copy(type, value, _objectsCache[value.GetType()][key]);
+                _objectsCache[type][key] = _objectsCache[value.GetType()][key];
+            }
+            else
+            {
+                _objectsCache[value.GetType()][key] = value;
+                _objectsCache[type][key] = value;
+            }
+        }
 
     }
 
