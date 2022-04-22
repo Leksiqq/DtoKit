@@ -1,21 +1,17 @@
-using DtoKit.Demo;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Net.Leksi.Dto;
 using NUnit.Framework;
 using System;
-using System.Data.Common;
-using System.Globalization;
-using System.Threading;
+using System.Collections.Generic;
 
 namespace TestProject1
 {
     public class Tests
     {
-        private IHost _host;
+        private static IHost _host;
 
-        [OneTimeSetUp]
-        public void Setup()
+        static Tests()
         {
             _host = Host.CreateDefaultBuilder()
                 .ConfigureServices(serviceCollection =>
@@ -24,12 +20,18 @@ namespace TestProject1
                 }).Build();
         }
 
+        static IEnumerable<Type> DtoTypes()
+        {
+            DtoServiceProvider sp = _host.Services.GetService<DtoServiceProvider>();
+
+            foreach(var item in sp)
+            {
+                yield return item.ServiceType;
+            }
+        }
+
         [Test]
-        [TestCase(typeof(ILine))]
-        [TestCase(typeof(IPort))]
-        [TestCase(typeof(IVessel))]
-        [TestCase(typeof(IRoute))]
-        [TestCase(typeof(IShipCall))]
+        [TestCaseSource(nameof(DtoTypes))]
         public void Test2(Type type)
         {
             DtoBuilder dtoBuilder = _host.Services.GetRequiredService<DtoBuilder>();
@@ -42,6 +44,12 @@ namespace TestProject1
             };
 
             dtoBuilder.BuildOfType(type);
+        }
+
+        [Test]
+        public void Test3()
+        {
+
         }
     }
 }

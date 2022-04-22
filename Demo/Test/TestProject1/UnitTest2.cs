@@ -5,6 +5,8 @@ using System;
 using System.Data.Common;
 using System.Globalization;
 using System.Threading;
+using System.Xml;
+using System.Xml.Linq;
 
 namespace TestProject2
 {
@@ -31,11 +33,29 @@ namespace TestProject2
             Thread.CurrentThread.CurrentCulture = myCIclone;
 
             Database db = new();
-            DbDataReader dr = db.GetRoutes("SSK", 2);
+            DbDataReader dr = db.GetRoutes(null, null);
             while (dr.Read())
             {
                 Console.WriteLine(dr);
             }
+        }
+
+        [Test]
+        public void Test2()
+        {
+            XDocument xdoc = new();
+            xdoc.Add(new XElement("Data"));
+            Database db = new();
+            DbDataReader dr = db.GetRoutes(null, null);
+            while (dr.Read())
+            {
+                xdoc.Root.Add(new XElement("table"));
+            }
+            XmlWriterSettings xws = new XmlWriterSettings();
+            xws.Indent = true;
+            using XmlWriter xw = XmlWriter.Create(Console.Out, xws);
+            xdoc.WriteTo(xw);
+            
         }
 
    }
