@@ -53,11 +53,11 @@ public class Database
                           ID_VESSEL = vessel.Attribute("ID_VESSEL").Value,
                           Name = vessel.Attribute("Name").Value,
                           CallSign = vessel.Attribute("CallSign").Value,
-                          Brutto = double.Parse(vessel.Attribute("Brutto")?.Value ?? "0"),
-                          Height = double.Parse(vessel.Attribute("Height")?.Value ?? "0"),
-                          Length = double.Parse(vessel.Attribute("Length")?.Value ?? "0"),
-                          Netto = double.Parse(vessel.Attribute("Netto")?.Value ?? "0"),
-                          Width = double.Parse(vessel.Attribute("Width")?.Value ?? "0"),
+                          Brutto = vessel.Attribute("Brutto").Value,
+                          Height = vessel.Attribute("Height").Value,
+                          Length = vessel.Attribute("Length").Value,
+                          Netto = vessel.Attribute("Netto").Value,
+                          Width = vessel.Attribute("Width").Value,
                           ID_PORT = vessel.Attribute("ID_PORT").Value,
                           PortName = port.Attribute("Name").Value
                       };
@@ -87,21 +87,21 @@ public class Database
                       select new
                       {
                           ID_LINE = route.Attribute("ID_LINE").Value,
-                          ID_ROUTE = int.Parse(route.Attribute("ID_ROUTE")?.Value ?? "0"),
+                          ID_ROUTE = route.Attribute("ID_ROUTE").Value,
                           ID_VESSEL = route.Attribute("ID_VESSEL").Value,
                           LineName = line.Attribute("Name").Value,
                           CallSign = vessel.Attribute("CallSign").Value,
-                          Brutto = double.Parse(vessel.Attribute("Brutto")?.Value ?? "0"),
-                          Height = double.Parse(vessel.Attribute("Height")?.Value ?? "0"),
-                          Length = double.Parse(vessel.Attribute("Length")?.Value ?? "0"),
-                          Netto = double.Parse(vessel.Attribute("Netto")?.Value ?? "0"),
-                          Width = double.Parse(vessel.Attribute("Width")?.Value ?? "0"),
+                          Brutto = vessel.Attribute("Brutto").Value,
+                          Height = vessel.Attribute("Height").Value,
+                          Length = vessel.Attribute("Length").Value,
+                          Netto = vessel.Attribute("Netto").Value,
+                          Width = vessel.Attribute("Width").Value,
                           ID_PORT = vessel.Attribute("ID_PORT").Value,
                           PortName = port.Attribute("Name").Value
                       };
         return new DataReader(from route in routes 
                               where (id_line is null || route.ID_LINE == id_line) 
-                                && (id_route is null || route.ID_ROUTE == id_route)
+                                && (id_route is null || route.ID_ROUTE == id_route.ToString())
                               select routes);
     }
 
