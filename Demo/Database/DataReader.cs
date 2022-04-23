@@ -12,7 +12,7 @@ public class DataReader : DbDataReader
         _rows = rows.GetEnumerator();   
     }
     public override object this[string name] => _rows.Current.GetType().GetProperty(name)?.GetValue(_rows.Current) 
-        ?? throw new IndexOutOfRangeException("Unable to find specified column in result set");
+        ?? throw new IndexOutOfRangeException($"Unable to find specified column in result set: {name}");
     public override bool Read()
     {
         return _rows.MoveNext();

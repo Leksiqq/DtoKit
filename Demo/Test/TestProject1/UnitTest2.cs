@@ -49,23 +49,46 @@ namespace TestProject2
             xdoc.Add(new XElement("Data"));
             Database db = new();
             DbDataReader dr = db.GetRoutes(null, null);
+            int travelDurationDays = 3;
+            int stayHours = 10;
             while (dr.Read())
             {
+                Console.WriteLine(dr["ID_LINE"]);
+                continue;
                 DateTime departure = DateTime.ParseExact("2018-01-01T19:00:00", "s", null) 
-                    + TimeSpan.FromDays(random.NextInt64(180) - 90);
-                int? prevCallId = null;
-                List<string> ports = new();
+                    + TimeSpan.FromDays(random.Next(180) - 90);
+                List<string> allPorts = new();
                 DbDataReader dr1 = db.GetPorts(null);
                 while (dr1.Read())
                 {
-                    ports.Add(dr1["ID_PORT"].ToString());
+                    allPorts.Add(dr1["ID_PORT"].ToString());
                 }
-                int n_ports = (int)random.NextInt64(3, 10);
+                int n_ports = (int)random.Next(3, 10);
+                List<string> ports = new();
                 for(int i = 0; i < n_ports; i++)
                 {
-
+                    string port = allPorts[random.Next(allPorts.Count)];
+                    if (!ports.Contains(port))
+                    {
+                        ports.Add(port);
+                    }
                 }
-                xdoc.Root.Add(new XElement("table"));
+                int idShipCall = 0;
+                for(int direction = 0; ; ++direction)
+                {
+                    for(int i = 0; i < n_ports - 1; i++)
+                    {
+                        string port = direction % 2 == 0 ? ports[i] : ports[n_ports - i - 1];
+                        DateTime arrival = departure.AddHours(-stayHours);
+                        departure = departure.AddDays(travelDurationDays);
+                        xdoc.Root.Add(
+                            new XElement("table",
+                                new XAttribute("ID_SHIPCALL", ++idShipCall),
+                                new XAttribute("ID_LINE", dr["ID_LINE"])
+                                )
+                            );
+                    }
+                }
             }
             XmlWriterSettings xws = new XmlWriterSettings();
             xws.Indent = true;
