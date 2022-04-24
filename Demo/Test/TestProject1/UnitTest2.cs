@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Globalization;
+using System.IO;
+using System.Text;
 using System.Threading;
 using System.Xml;
 using System.Xml.Linq;
@@ -46,53 +48,82 @@ namespace TestProject2
         {
             Random random = new Random();
             XDocument xdoc = new();
+            
             xdoc.Add(new XElement("Data"));
-            Database db = new();
-            DbDataReader dr = db.GetRoutes(null, null);
             int travelDurationDays = 3;
             int stayHours = 10;
+            Database db = new();
+            List<string> allPorts = new();
+            DbDataReader dr = db.GetPorts(null);
             while (dr.Read())
             {
-                Console.WriteLine(dr["ID_LINE"]);
-                continue;
+                allPorts.Add(dr["ID_PORT"].ToString());
+            }
+            
+            dr = db.GetRoutes(null, null);
+            while (dr.Read())
+            {
+                string idVessel = dr["ID_VESSEL"].ToString();
                 DateTime departure = DateTime.ParseExact("2018-01-01T19:00:00", "s", null) 
                     + TimeSpan.FromDays(random.Next(180) - 90);
-                List<string> allPorts = new();
-                DbDataReader dr1 = db.GetPorts(null);
-                while (dr1.Read())
-                {
-                    allPorts.Add(dr1["ID_PORT"].ToString());
-                }
                 int n_ports = (int)random.Next(3, 10);
                 List<string> ports = new();
+                int voyageNum = 0;
+                int year = 0;
                 for(int i = 0; i < n_ports; i++)
                 {
-                    string port = allPorts[random.Next(allPorts.Count)];
-                    if (!ports.Contains(port))
+                    while (true)
                     {
-                        ports.Add(port);
+                        string port = allPorts[random.Next(allPorts.Count)];
+                        if (!ports.Contains(port))
+                        {
+                            ports.Add(port);
+                            break;
+                        }
                     }
                 }
                 int idShipCall = 0;
-                for(int direction = 0; ; ++direction)
+                bool running = true;
+                for(int direction = 0; running; ++direction)
                 {
+                    if(departure.Year != year)
+                    {
+                        voyageNum = 0;
+                        year = departure.Year;
+                    }
+                    ++voyageNum;
+                    string voyage = idVessel.Substring(0, Math.Min(3, idVessel.Length)) + departure.ToString("yy") 
+                        + string.Format("{0:000}", voyageNum);
                     for(int i = 0; i < n_ports - 1; i++)
                     {
                         string port = direction % 2 == 0 ? ports[i] : ports[n_ports - i - 1];
-                        DateTime arrival = departure.AddHours(-stayHours);
-                        departure = departure.AddDays(travelDurationDays);
+                        DateTime arrival = departure + TimeSpan.FromHours(-stayHours);
+                        if(arrival > DateTime.Now)
+                        {
+                            running = false;
+                            break;
+                        }
                         xdoc.Root.Add(
                             new XElement("table",
+                                new XAttribute("PrevCall", idShipCall == 0 ? string.Empty : idShipCall),
                                 new XAttribute("ID_SHIPCALL", ++idShipCall),
-                                new XAttribute("ID_LINE", dr["ID_LINE"])
+                                new XAttribute("ID_ROUTE", dr["ID_ROUTE"]),
+                                new XAttribute("ID_LINE", dr["ID_LINE"]),
+                                new XAttribute("Arrival", arrival),
+                                new XAttribute("Departure", departure),
+                                new XAttribute("ID_PORT", port),
+                                new XAttribute("Voyage", voyage)
                                 )
                             );
+                        departure += TimeSpan.FromDays(travelDurationDays);
                     }
                 }
             }
             XmlWriterSettings xws = new XmlWriterSettings();
             xws.Indent = true;
-            using XmlWriter xw = XmlWriter.Create(Console.Out, xws);
+            xws.Encoding = Encoding.UTF8;
+            using FileStream output = new FileStream("shipcalls.xml", FileMode.Create);
+            using XmlWriter xw = XmlWriter.Create(output, xws);
             xdoc.WriteTo(xw);
             
         }

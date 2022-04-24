@@ -9,6 +9,7 @@ public class Database
     private const string _ports = "ports.xml";
     private const string _vessels = "vessels.xml";
     private const string _routes = "routes.xml";
+    private const string _shipcalls = "shipcalls.xml";
 
     private object _lock = new object();
 
@@ -102,7 +103,7 @@ public class Database
         return new DataReader(from route in routes 
                               where (id_line is null || route.ID_LINE == id_line) 
                                 && (id_route is null || route.ID_ROUTE == id_route.ToString())
-                              select routes);
+                              select route);
     }
 
 }
