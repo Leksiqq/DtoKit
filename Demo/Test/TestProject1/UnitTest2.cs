@@ -8,6 +8,7 @@ using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
 
@@ -28,7 +29,7 @@ namespace TestProject2
         }
 
         [Test]
-        public void Test1()
+        public async void Test1()
         {
             CultureInfo myCIclone = (CultureInfo)Thread.CurrentThread.CurrentCulture.Clone();
             myCIclone.NumberFormat.NumberDecimalSeparator = ".";
@@ -36,7 +37,7 @@ namespace TestProject2
             Thread.CurrentThread.CurrentCulture = myCIclone;
 
             Database db = new();
-            DbDataReader dr = db.GetRoutes(null, null);
+            DbDataReader dr = await db.GetRoutesAsync(null, null);
             while (dr.Read())
             {
                 Console.WriteLine(dr);
@@ -44,7 +45,7 @@ namespace TestProject2
         }
 
         [Test]
-        public void Test2()
+        public async Task Test2()
         {
             Random random = new Random();
             XDocument xdoc = new();
@@ -54,13 +55,13 @@ namespace TestProject2
             int stayHours = 10;
             Database db = new();
             List<string> allPorts = new();
-            DbDataReader dr = db.GetPorts(null);
+            DbDataReader dr = await db.GetPortsAsync(null);
             while (dr.Read())
             {
                 allPorts.Add(dr["ID_PORT"].ToString());
             }
             
-            dr = db.GetRoutes(null, null);
+            dr = await db.GetRoutesAsync(null, null);
             while (dr.Read())
             {
                 string idVessel = dr["ID_VESSEL"].ToString();
