@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Net.Leksi.ClientServerContractCommon" Version="1.0.0" />
+    <ProjectReference Include="..\..\Contract\Contract.csproj" />
   </ItemGroup>
 
 </Project>

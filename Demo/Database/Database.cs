@@ -1,184 +1,292 @@
-﻿using System.Data.Common;
-using System.Xml.Linq;
+﻿using Microsoft.Data.SqlClient;
+using System.Data.Common;
+using System.Text;
 
 namespace DtoKit.Demo;
 
 public class Database
 {
-    private const string _lines = "lines.xml";
-    private const string _ports = "ports.xml";
-    private const string _vessels = "vessels.xml";
-    private const string _routes = "routes.xml";
-    private const string _shipcalls = "shipcalls.xml";
+    private readonly string _connectionString;
 
-    private object _lock = new object();
-
-    public Task<DbDataReader> GetLinesAsync(string? id)
+    public Database(string connectionString)
     {
-        return Task.Run(() =>
-        {
-            XDocument xlines;
-            lock (_lock)
-            {
-                xlines = XDocument.Load(_lines);
-            }
-            var lines = from line in xlines.Root.Elements()
-                        select new { ID_LINE = line.Attribute("ID_LINE").Value, Name = line.Attribute("Name").Value };
-            return new DataReader(from line in lines where (id is null || line.ID_LINE == id) select line) as DbDataReader;
-        });
+        _connectionString = connectionString;
     }
 
-    public Task<DbDataReader> GetPortsAsync(string? id)
+    public async IAsyncEnumerable<DbDataReader> GetLinesAsync(string? id, string? name)
     {
+        using SqlConnection connection = new SqlConnection(_connectionString);
 
-        return Task.Run(() =>
+        Task t = connection.OpenAsync();
+
+        StringBuilder sb = new("select ID_LINE, NAME from Lines");
+        List<string> where = new();
+
+        SqlCommand cmd = connection.CreateCommand();
+        if (id is { })
         {
-            XDocument xport;
-            lock (_lock)
-            {
-                xport = XDocument.Load(_ports);
-            }
-            var ports = from port in xport.Root.Elements()
-                        select new { ID_PORT = port.Attribute("ID_PORT").Value, Name = port.Attribute("Name").Value };
-            return new DataReader(from port in ports where (id is null || port.ID_PORT == id) select port) as DbDataReader;
-        });
+            where.Add("ID_LINE=@ID_LINE");
+            cmd.Parameters.AddWithValue("@ID_LINE", id);
+        }
+        if (name is { })
+        {
+            where.Add("Name like @Name");
+            cmd.Parameters.AddWithValue("@Name", name);
+        }
+
+        if(where.Count > 0)
+        {
+            sb.Append(" where ").Append(string.Join(" and ", where));
+        }
+
+        cmd.CommandText = sb.ToString();
+
+        await t.ConfigureAwait(false);
+
+        using SqlDataReader dr = await cmd.ExecuteReaderAsync();
+
+        while(await dr.ReadAsync())
+        {
+            yield return (DbDataReader)dr;
+        }
     }
 
-    public Task<DbDataReader> GetVesselsAsync(string? id)
+    public async IAsyncEnumerable<DbDataReader> GetPortsAsync(string? id, string? name)
     {
-        return Task.Run(() =>
+        using SqlConnection connection = new SqlConnection(_connectionString);
+
+        Task t = connection.OpenAsync();
+
+        StringBuilder sb = new("select ID_PORT, Name from Ports");
+        List<string> where = new();
+
+        SqlCommand cmd = connection.CreateCommand();
+        if (id is { })
         {
-            XDocument xvessels;
-            XDocument xports;
-            lock (_lock)
-            {
-                xvessels = XDocument.Load(_vessels);
-                xports = XDocument.Load(_ports);
-            }
-            var vessels = from vessel in xvessels.Root.Elements()
-                          from port in xports.Root.Elements()
-                          where port.Attribute("ID_PORT").Value == vessel.Attribute("ID_PORT").Value
-                          select new
-                          {
-                              ID_VESSEL = vessel.Attribute("ID_VESSEL").Value,
-                              Name = vessel.Attribute("Name").Value,
-                              CallSign = vessel.Attribute("CallSign").Value,
-                              Brutto = vessel.Attribute("Brutto").Value,
-                              Height = vessel.Attribute("Height").Value,
-                              Length = vessel.Attribute("Length").Value,
-                              Netto = vessel.Attribute("Netto").Value,
-                              Width = vessel.Attribute("Width").Value,
-                              ID_PORT = vessel.Attribute("ID_PORT").Value,
-                              PortName = port.Attribute("Name").Value
-                          };
-            return new DataReader(from vessel in vessels where (id is null || vessel.ID_VESSEL == id) select vessel) as DbDataReader;
-        });
+            where.Add("ID_PORT=@ID_PORT");
+            cmd.Parameters.AddWithValue("@ID_PORT", id);
+        }
+        if (name is { })
+        {
+            where.Add("Name like @Name");
+            cmd.Parameters.AddWithValue("@Name", name);
+        }
+
+        if (where.Count > 0)
+        {
+            sb.Append(" where ").Append(string.Join(" and ", where));
+        }
+
+        cmd.CommandText = sb.ToString();
+
+        await t.ConfigureAwait(false);
+
+        using SqlDataReader dr = await cmd.ExecuteReaderAsync();
+
+        while (await dr.ReadAsync())
+        {
+            yield return (DbDataReader)dr;
+        }
     }
 
-    public Task<DbDataReader> GetRoutesAsync(string? id_line, int? id_route)
+    public async IAsyncEnumerable<DbDataReader> GetVesselsAsync(string? id, string? name)
     {
-        return Task.Run(() =>
+        using SqlConnection connection = new SqlConnection(_connectionString);
+
+        Task t = connection.OpenAsync();
+
+        StringBuilder sb = new("select ID_VESSEL, Name, ID_PORT PortID_PORT, Length, Width, Height, Brutto, Netto, CallSign from Vessels");
+        List<string> where = new();
+
+        SqlCommand cmd = connection.CreateCommand();
+        if (id is { })
         {
-            XDocument xroutes;
-            XDocument xvessels;
-            XDocument xlines;
-            XDocument xports;
-            lock (_lock)
-            {
-                xvessels = XDocument.Load(_vessels);
-                xlines = XDocument.Load(_lines);
-                xroutes = XDocument.Load(_routes);
-                xports = XDocument.Load(_ports);
-            }
-            var routes = from route in xroutes.Root.Elements()
-                         from vessel in xvessels.Root.Elements()
-                         from line in xlines.Root.Elements()
-                         from port in xports.Root.Elements()
-                         where line.Attribute("ID_LINE").Value == route.Attribute("ID_LINE").Value
-                           && vessel.Attribute("ID_VESSEL").Value == route.Attribute("ID_VESSEL").Value
-                           && port.Attribute("ID_PORT").Value == vessel.Attribute("ID_PORT").Value
-                         select new
-                         {
-                             ID_LINE = route.Attribute("ID_LINE").Value,
-                             ID_ROUTE = route.Attribute("ID_ROUTE").Value,
-                             ID_VESSEL = route.Attribute("ID_VESSEL").Value,
-                             LineName = line.Attribute("Name").Value,
-                             VesselName = vessel.Attribute("Name").Value,
-                             VesselCallSign = vessel.Attribute("CallSign").Value,
-                             VesselBrutto = vessel.Attribute("Brutto").Value,
-                             VesselHeight = vessel.Attribute("Height").Value,
-                             VesselLength = vessel.Attribute("Length").Value,
-                             VesselNetto = vessel.Attribute("Netto").Value,
-                             VesselWidth = vessel.Attribute("Width").Value,
-                             VesselID_PORT = vessel.Attribute("ID_PORT").Value,
-                             VesselPortName = port.Attribute("Name").Value
-                         };
-            return new DataReader(from route in routes
-                                  where (id_line is null || route.ID_LINE == id_line)
-                                    && (id_route is null || route.ID_ROUTE == id_route.ToString())
-                                  select route) as DbDataReader;
-        });
+            where.Add("ID_VESSEL=@ID_VESSEL");
+            cmd.Parameters.AddWithValue("@ID_VESSEL", id);
+        }
+        if (name is { })
+        {
+            where.Add("Name like @Name");
+            cmd.Parameters.AddWithValue("@Name", name);
+        }
+
+        if (where.Count > 0)
+        {
+            sb.Append(" where ").Append(string.Join(" and ", where));
+        }
+
+        cmd.CommandText = sb.ToString();
+
+        await t.ConfigureAwait(false);
+
+        using SqlDataReader dr = await cmd.ExecuteReaderAsync();
+
+        while (await dr.ReadAsync())
+        {
+            yield return (DbDataReader)dr;
+        }
     }
 
-    public Task<DbDataReader> GetShipCallsAsync(string? id_line, string? id_vessel, 
-        string? id_port, DateTime? _from, DateTime? to)
+    public async IAsyncEnumerable<DbDataReader> GetRoutesAsync(string? id_line, int? id_route, string? lineName, string? vesselName)
     {
-        return Task.Run(() =>
+        using SqlConnection connection = new SqlConnection(_connectionString);
+
+        Task t = connection.OpenAsync();
+
+        StringBuilder sb = new(@"
+select ID_ROUTE, r.ID_LINE, l.Name LineName, r.ID_VESSEL, v.Brutto VesselBrutto, v.Netto VesselNetto, 
+v.Length VesselLength, v.Width VesselWidth, v.Height VesselHeight, v.CallSign VesselCallSign, 
+v.ID_PORT VesselID_PORT, p.Name VesselPportName
+from Routes r, Lines l, Vessels v, Ports p
+where 
+l.ID_LINE=r.ID_LINE
+and v.ID_VESSEL=r.ID_VESSEL
+and p.ID_PORT=v.ID_PORT
+");
+        List<string> where = new();
+
+        SqlCommand cmd = connection.CreateCommand();
+        if (id_line is { })
         {
-            XDocument xshipcalls;
-            XDocument xroutes;
-            XDocument xvessels;
-            XDocument xlines;
-            XDocument xports;
-            lock (_lock)
-            {
-                xshipcalls = XDocument.Load(_shipcalls);
-                xvessels = XDocument.Load(_vessels);
-                xlines = XDocument.Load(_lines);
-                xroutes = XDocument.Load(_routes);
-                xports = XDocument.Load(_ports);
-            }
-            var shipcalls = from shipcall in xshipcalls.Root.Elements()
-                         from route in xroutes.Root.Elements()
-                         from vessel in xvessels.Root.Elements()
-                         from line in xlines.Root.Elements()
-                         from port in xports.Root.Elements()
-                         where route.Attribute("ID_ROUTE").Value == shipcall.Attribute("ID_ROUTE").Value
-                           && route.Attribute("ID_LINE").Value == shipcall.Attribute("ID_LINE").Value
-                            && line.Attribute("ID_LINE").Value == route.Attribute("ID_LINE").Value
-                           && vessel.Attribute("ID_VESSEL").Value == route.Attribute("ID_VESSEL").Value
-                           && port.Attribute("ID_PORT").Value == vessel.Attribute("ID_PORT").Value
-                         select new
-                         {
-                             ID_LINE = shipcall.Attribute("ID_LINE").Value,
-                             ID_SHIPCALL = shipcall.Attribute("ID_SHIPCALL").Value,
-                             AdditionalInfo = string.Empty,
-                             Arrival = shipcall.Attribute("Arrival").Value,
-                             Departure = shipcall.Attribute("Departure").Value,
-                             Voyage = shipcall.Attribute("Voyage").Value,
-                             ID_PORT = vessel.Attribute("ID_PORT").Value,
-                             PortName = port.Attribute("Name").Value,
-                             PrevID_SHIPCALL = shipcall.Attribute("PrevCall").Value,
-                             ID_ROUTE = route.Attribute("ID_ROUTE").Value,
-                             ID_VESSEL = route.Attribute("ID_VESSEL").Value,
-                             LineName = line.Attribute("Name").Value,
-                             VesselCallSign = vessel.Attribute("CallSign").Value,
-                             VesselBrutto = vessel.Attribute("Brutto").Value,
-                             VesselHeight = vessel.Attribute("Height").Value,
-                             VesselLength = vessel.Attribute("Length").Value,
-                             VesselNetto = vessel.Attribute("Netto").Value,
-                             VesselWidth = vessel.Attribute("Width").Value,
-                             VesselID_PORT = vessel.Attribute("ID_PORT").Value,
-                             VesselPortName = port.Attribute("Name").Value
-                         };
-            return new DataReader(from shipcall in shipcalls
-                                  where (id_line is null || shipcall.ID_LINE == id_line)
-                                    && (id_vessel is null || shipcall.ID_VESSEL == id_vessel)
-                                    && (id_port is null || shipcall.ID_PORT == id_port)
-                                    && (_from is null || DateTime.Parse(shipcall.Departure) >= _from)
-                                    && (to is null || DateTime.Parse(shipcall.Departure) < to)
-                                  select shipcall) as DbDataReader;
-        });
+            where.Add("ID_LINE=@ID_LINE");
+            cmd.Parameters.AddWithValue("@ID_LINE", id_line);
+        }
+        if (id_route is { })
+        {
+            where.Add("@ID_ROUTE=ID_ROUTE");
+            cmd.Parameters.AddWithValue("@ID_ROUTE", id_route);
+        }
+        if (lineName is { })
+        {
+            where.Add("LineName like @LineName");
+            cmd.Parameters.AddWithValue("@LineName", lineName);
+        }
+        if (vesselName is { })
+        {
+            where.Add("VesselName like @VesselName");
+            cmd.Parameters.AddWithValue("@VesselName", vesselName);
+        }
+
+        if (where.Count > 0)
+        {
+            sb.Append(" and ").Append(string.Join(" and ", where));
+        }
+
+        cmd.CommandText = sb.ToString();
+
+        await t.ConfigureAwait(false);
+
+        using SqlDataReader dr = await cmd.ExecuteReaderAsync();
+
+        while (await dr.ReadAsync())
+        {
+            yield return (DbDataReader)dr;
+        }
+    }
+
+    public async IAsyncEnumerable<DbDataReader> GetShipCallsAsync(string? id_line, int? id_shipcall, string? lineName, string? voyage, string? vesselName,
+        string? portName, DateTime? @from, DateTime? to)
+    {
+        using SqlConnection connection = new SqlConnection(_connectionString);
+
+        Task t = connection.OpenAsync();
+
+        StringBuilder sb = new(@"
+select
+    s.ID_LINE,
+    s.ID_SHIPCALL,
+    s.Arrival,
+    s.Departure,
+    s.Voyage,
+    s.ID_PORT,
+    p1.Name PortName,
+    s.PrevID_SHIPCALL,
+    s.ID_ROUTE,
+    l.Name LineName,
+    r.ID_VESSEL,
+    v.Brutto VesselBrutto,
+    v.CallSign VesselCallSign,
+    v.Height VesselHeight,
+    v.Length VesselLength,
+    v.Name VesselName,
+    v.Netto VesselNetto,
+    v.Width VesselWidth,
+    v.ID_PORT VesselID_PORT,
+    p2.Name VesselPortName
+from 
+    ShipCalls s,
+    Ports p1,
+    Lines l,
+    Routes r,
+    Vessels v,
+    Ports p2
+where
+    p1.ID_PORT=s.ID_PORT
+    and l.ID_LINE=s.ID_LINE
+    and r.ID_ROUTE=s.ID_ROUTE
+    and r.ID_LINE=s.ID_LINE
+    and v.ID_VESSEL=r.ID_VESSEL
+    and p2.ID_PORT=v.ID_PORT
+");
+        List<string> where = new();
+
+        SqlCommand cmd = connection.CreateCommand();
+        if (id_line is { })
+        {
+            where.Add("ID_LINE=@ID_LINE");
+            cmd.Parameters.AddWithValue("@ID_LINE", id_line);
+        }
+        if (id_shipcall is { })
+        {
+            where.Add("@ID_SHIPCALL=ID_SHIPCALL");
+            cmd.Parameters.AddWithValue("@ID_SHIPCALL", id_shipcall);
+        }
+        if (lineName is { })
+        {
+            where.Add("LineName like @LineName");
+            cmd.Parameters.AddWithValue("@LineName", lineName);
+        }
+        if (vesselName is { })
+        {
+            where.Add("VesselName like @VesselName");
+            cmd.Parameters.AddWithValue("@VesselName", vesselName);
+        }
+        if (portName is { })
+        {
+            where.Add("PortName like @PortName");
+            cmd.Parameters.AddWithValue("@PortName", portName);
+        }
+        if (voyage is { })
+        {
+            where.Add("Voyage like @Voyage");
+            cmd.Parameters.AddWithValue("@Voyage", voyage);
+        }
+        if (@from is { })
+        {
+            where.Add("Departure >= @DepartureFrom");
+            cmd.Parameters.AddWithValue("@DepartureFrom", @from);
+        }
+        if (to is { })
+        {
+            where.Add("Departure < @DepartureTo");
+            cmd.Parameters.AddWithValue("@DepartureTo", to);
+        }
+
+        if (where.Count > 0)
+        {
+            sb.Append(" and ").Append(string.Join(" and ", where));
+        }
+
+        cmd.CommandText = sb.ToString();
+
+        await t.ConfigureAwait(false);
+
+        using SqlDataReader dr = await cmd.ExecuteReaderAsync();
+
+        while (await dr.ReadAsync())
+        {
+            yield return (DbDataReader)dr;
+        }
     }
 }
-}
+

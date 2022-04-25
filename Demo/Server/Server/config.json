@@ -1,0 +1,5 @@
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=leksi\\sqlexpress;Database=marina;Integrated Security=true;Encrypt=no"
+  }
+}

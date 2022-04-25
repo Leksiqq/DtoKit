@@ -3,19 +3,21 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.1.32228.430
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server", "Server\Server.csproj", "{C045B67A-428A-4AF3-BA50-2F0D556D68EB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Server", "Server\Server.csproj", "{C045B67A-428A-4AF3-BA50-2F0D556D68EB}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Contract", "..\Contract\Contract.csproj", "{FCEEB82B-2B7A-41A0-8C5E-0EE4A3093056}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Entities", "..\Entities\Entities.csproj", "{126A0FCA-76CB-4C07-AE2E-6AC07FA0CF7D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Database", "..\Database\Database.csproj", "{734964BD-2F75-4BAC-8A96-442E1F3C3ACA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Database", "..\Database\Database.csproj", "{734964BD-2F75-4BAC-8A96-442E1F3C3ACA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestProject1", "..\Test\TestProject1\TestProject1.csproj", "{CC58AD49-87A9-4480-960D-A3DD2088A0F4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestProject1", "..\Test\TestProject1\TestProject1.csproj", "{CC58AD49-87A9-4480-960D-A3DD2088A0F4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DtoSetup", "..\DtoSetup\DtoSetup.csproj", "{62FF1ABB-A262-4AD7-B4EF-503C14D47D74}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DtoSetup", "..\DtoSetup\DtoSetup.csproj", "{62FF1ABB-A262-4AD7-B4EF-503C14D47D74}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp1", "..\ConsoleApp1\ConsoleApp1.csproj", "{3CC4B078-B5E1-4275-967D-51B03881E32D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleApp1", "..\ConsoleApp1\ConsoleApp1.csproj", "{3CC4B078-B5E1-4275-967D-51B03881E32D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Connector", "..\Client\Connector\Connector.csproj", "{49B5BCA3-51D0-4837-B290-6F7A1DD23057}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,6 +53,10 @@ Global
 		{3CC4B078-B5E1-4275-967D-51B03881E32D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3CC4B078-B5E1-4275-967D-51B03881E32D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3CC4B078-B5E1-4275-967D-51B03881E32D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{49B5BCA3-51D0-4837-B290-6F7A1DD23057}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{49B5BCA3-51D0-4837-B290-6F7A1DD23057}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{49B5BCA3-51D0-4837-B290-6F7A1DD23057}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{49B5BCA3-51D0-4837-B290-6F7A1DD23057}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
