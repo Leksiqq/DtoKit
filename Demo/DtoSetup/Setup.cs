@@ -21,6 +21,7 @@ public class Setup
             provider.AddTransient<IRouteForShipCallList>(op => Create<Route>());
             provider.AddTransient<IShipCallForList>(op => Create<ShipCall>());
             provider.AddTransient<IShipCallAdditionInfo>(op => Create<ShipCall>());
+            provider.AddTransient<ShipCallsFilter>();
         });
     }
 

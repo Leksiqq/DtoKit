@@ -1,11 +1,12 @@
-﻿using Net.Leksi.Server.Contract;
+﻿using Net.Leksi.RestContract;
 using System.Collections.ObjectModel;
 
 namespace DtoKit.Demo;
 
 public interface IConnector
 {
-    [RoutePath("/shipCalls")]
+    [RoutePath("/shipCalls/{filter}/{count:int}")]
     [HttpMethodGet]
-    Task GetShipCalls(ShipCallsFilter filter, [NotParameter] ObservableCollection<IShipCallForList> list);
+    [Authorization]
+    Task GetShipCalls(int count, ShipCallsFilter filter, ObservableCollection<IShipCallForList> list);
 }

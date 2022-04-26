@@ -3,7 +3,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Net.Leksi.Server.Contract;
+using Net.Leksi.RestContract;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -64,7 +64,7 @@ public class Generators
 
         Database db = _host.Services.GetRequiredService<Database>();
         int count = 0;
-        await foreach (DbDataReader dr in db.GetShipCallsAsync(null, null, null, null, null, null, null, null))
+        await foreach (DbDataReader dr in db.GetShipCallsAsync("SSK", null, null, null, null, "%IRA%", DateTime.Parse("2022-01-01"), null))
         {
             ++count;
             Console.WriteLine(String.Join("; ", Enumerable.Range(0, dr.FieldCount).Select(i => dr[i].ToString())));

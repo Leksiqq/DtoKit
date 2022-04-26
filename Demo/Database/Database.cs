@@ -36,7 +36,7 @@ public class Database
 
         if(where.Count > 0)
         {
-            sb.Append(" where ").Append(string.Join(" and ", where));
+            sb.Append(" where ").AppendJoin(" and ", where);
         }
 
         cmd.CommandText = sb.ToString();
@@ -74,7 +74,7 @@ public class Database
 
         if (where.Count > 0)
         {
-            sb.Append(" where ").Append(string.Join(" and ", where));
+            sb.Append(" where ").AppendJoin(" and ", where);
         }
 
         cmd.CommandText = sb.ToString();
@@ -112,7 +112,7 @@ public class Database
 
         if (where.Count > 0)
         {
-            sb.Append(" where ").Append(string.Join(" and ", where));
+            sb.Append(" where ").AppendJoin(" and ", where);
         }
 
         cmd.CommandText = sb.ToString();
@@ -134,42 +134,53 @@ public class Database
         Task t = connection.OpenAsync();
 
         StringBuilder sb = new(@"
-select ID_ROUTE, r.ID_LINE, l.Name LineName, r.ID_VESSEL, v.Brutto VesselBrutto, v.Netto VesselNetto, 
-v.Length VesselLength, v.Width VesselWidth, v.Height VesselHeight, v.CallSign VesselCallSign, 
-v.ID_PORT VesselID_PORT, p.Name VesselPportName
+select 
+    r.ID_ROUTE, 
+    r.ID_LINE, 
+    l.Name LineName, 
+    r.ID_VESSEL, 
+    v.Name VesselName, 
+    v.Brutto VesselBrutto, 
+    v.Netto VesselNetto, 
+    v.Length VesselLength, 
+    v.Width VesselWidth, 
+    v.Height VesselHeight, 
+    v.CallSign VesselCallSign, 
+    v.ID_PORT VesselID_PORT, 
+    p.Name VesselPortName
 from Routes r, Lines l, Vessels v, Ports p
 where 
-l.ID_LINE=r.ID_LINE
-and v.ID_VESSEL=r.ID_VESSEL
-and p.ID_PORT=v.ID_PORT
+    l.ID_LINE=r.ID_LINE
+    and v.ID_VESSEL=r.ID_VESSEL
+    and p.ID_PORT=v.ID_PORT
 ");
         List<string> where = new();
 
         SqlCommand cmd = connection.CreateCommand();
         if (id_line is { })
         {
-            where.Add("ID_LINE=@ID_LINE");
+            where.Add("r.ID_LINE=@ID_LINE");
             cmd.Parameters.AddWithValue("@ID_LINE", id_line);
         }
         if (id_route is { })
         {
-            where.Add("@ID_ROUTE=ID_ROUTE");
+            where.Add("r.ID_ROUTE=@ID_ROUTE");
             cmd.Parameters.AddWithValue("@ID_ROUTE", id_route);
         }
         if (lineName is { })
         {
-            where.Add("LineName like @LineName");
+            where.Add("l.Name like @LineName");
             cmd.Parameters.AddWithValue("@LineName", lineName);
         }
         if (vesselName is { })
         {
-            where.Add("VesselName like @VesselName");
+            where.Add("v.Name like @VesselName");
             cmd.Parameters.AddWithValue("@VesselName", vesselName);
         }
 
         if (where.Count > 0)
         {
-            sb.Append(" and ").Append(string.Join(" and ", where));
+            sb.Append(" and ").AppendJoin(" and ", where);
         }
 
         cmd.CommandText = sb.ToString();
@@ -231,50 +242,51 @@ where
         List<string> where = new();
 
         SqlCommand cmd = connection.CreateCommand();
+
         if (id_line is { })
         {
-            where.Add("ID_LINE=@ID_LINE");
+            where.Add("s.ID_LINE=@ID_LINE");
             cmd.Parameters.AddWithValue("@ID_LINE", id_line);
         }
         if (id_shipcall is { })
         {
-            where.Add("@ID_SHIPCALL=ID_SHIPCALL");
+            where.Add("s.ID_SHIPCALL=@ID_SHIPCALL");
             cmd.Parameters.AddWithValue("@ID_SHIPCALL", id_shipcall);
         }
         if (lineName is { })
         {
-            where.Add("LineName like @LineName");
+            where.Add("l.Name like @LineName");
             cmd.Parameters.AddWithValue("@LineName", lineName);
         }
         if (vesselName is { })
         {
-            where.Add("VesselName like @VesselName");
+            where.Add("v.Name like @VesselName");
             cmd.Parameters.AddWithValue("@VesselName", vesselName);
         }
         if (portName is { })
         {
-            where.Add("PortName like @PortName");
+            where.Add("p1.Name like @PortName");
             cmd.Parameters.AddWithValue("@PortName", portName);
         }
         if (voyage is { })
         {
-            where.Add("Voyage like @Voyage");
+            where.Add("s.Voyage like @Voyage");
             cmd.Parameters.AddWithValue("@Voyage", voyage);
         }
         if (@from is { })
         {
-            where.Add("Departure >= @DepartureFrom");
+            where.Add("s.Departure >= @DepartureFrom");
             cmd.Parameters.AddWithValue("@DepartureFrom", @from);
         }
         if (to is { })
         {
-            where.Add("Departure < @DepartureTo");
+            where.Add("s.Departure < @DepartureTo");
             cmd.Parameters.AddWithValue("@DepartureTo", to);
         }
 
         if (where.Count > 0)
         {
-            sb.Append(" and ").Append(string.Join(" and ", where));
+            sb.Append(" and ").AppendJoin(" and ", where);
         }
 
         cmd.CommandText = sb.ToString();
@@ -288,5 +300,6 @@ where
             yield return (DbDataReader)dr;
         }
     }
+
 }
 

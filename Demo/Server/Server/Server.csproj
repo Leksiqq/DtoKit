@@ -7,11 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Net.Leksi.ClientServerContract" Version="1.0.0" />
-    <PackageReference Include="Net.Leksi.DtoKit" Version="1.0.0" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\RestContract\RestContractCommon\RestContractCommonDebug.csproj" />
+    <ProjectReference Include="..\..\..\..\RestContract\RestContract\RestContractDebug.csproj" />
     <ProjectReference Include="..\..\DtoSetup\DtoSetup.csproj" />
   </ItemGroup>
 

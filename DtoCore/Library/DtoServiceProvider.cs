@@ -196,10 +196,10 @@ public class DtoServiceProvider : IServiceProvider, IServiceCollection
     /// <inheritdoc/>
     public void Add(ServiceDescriptor item)
     {
-        if (!item.ServiceType.IsInterface)
-        {
-            throw new ArgumentException($"{item.ServiceType} is not an interface");
-        }
+        //if (!item.ServiceType.IsInterface)
+        //{
+        //    throw new ArgumentException($"{item.ServiceType} is not an interface");
+        //}
         if (item.Lifetime is not ServiceLifetime.Transient)
         {
             throw new InvalidOperationException($"{item.Lifetime} must be {ServiceLifetime.Transient} for {item.ServiceType}");

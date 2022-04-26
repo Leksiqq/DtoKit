@@ -2,7 +2,7 @@
 // MVC Controller proxy class DtoKit.Demo.DemoControllerProxy (Generated automatically)
 //------------------------------
 using Microsoft.AspNetCore.Mvc;
-using Net.Leksi.Server.Contract;
+using Net.Leksi.RestContract;
 
 namespace DtoKit.Demo;
 
