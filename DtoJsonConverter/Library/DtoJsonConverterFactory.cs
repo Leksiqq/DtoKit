@@ -213,6 +213,10 @@ public class DtoJsonConverterFactory : JsonConverterFactory
         {
             TypesForest.GetTypeNode(typeToConvert);
         }
+        else
+        {
+            result = IsSupportedType(typeToConvert);
+        }
         return result;
     }
 
@@ -238,6 +242,13 @@ public class DtoJsonConverterFactory : JsonConverterFactory
                     args: new object[] { this, kind }
                 )!;
         }
+        else if (IsSupportedType(typeToConvert))
+        {
+            converter = (JsonConverter)Activator.CreateInstance(
+                    typeof(SupportedTypeConverter<>).MakeGenericType(new Type[] { typeToConvert }),
+                    args: new object[] { this }
+                )!;
+        }
         else
         {
             converter = (JsonConverter)Activator.CreateInstance(
@@ -256,6 +267,11 @@ public class DtoJsonConverterFactory : JsonConverterFactory
         {
             throw new InvalidOperationException("Cannot configure after using.");
         }
+    }
+
+    private bool IsSupportedType(Type typeToConvert)
+    {
+        return typeToConvert.IsEnum;
     }
 
 }

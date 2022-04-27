@@ -273,4 +273,23 @@ public class DtoJsonConverterUnitTest
 
     }
 
+    [Test]
+    public void TestEnumAndDateTime()
+    {
+        ShipCallCondition scc = ShipCallCondition.Booking;
+        DateTime dt = DateTime.Now;
+
+        var couple = new { dt, scc };
+
+        DtoJsonConverterFactory converter = host.Services.GetRequiredService<DtoJsonConverterFactory>();
+        converter.WithMagic = true;
+        var options = new JsonSerializerOptions { WriteIndented = true };
+        options.Converters.Add(converter);
+
+        string json = JsonSerializer.Serialize(couple, options);
+
+        Console.WriteLine(json);
+
+    }
+
 }
