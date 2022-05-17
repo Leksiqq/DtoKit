@@ -17,9 +17,10 @@ namespace Net.Leksi.Dto;
 /// </summary>
 public class DtoServiceProvider : IServiceProvider, IServiceCollection
 {
-    private List<ServiceDescriptor> _serviceDescriptors = new();
-    private IServiceCollection? _services = null;
-    private IServiceProvider? _serviceProvider { get; set; }
+    private readonly List<ServiceDescriptor> _serviceDescriptors = new();
+
+    internal IServiceCollection? _services = null;
+    internal IServiceProvider? _serviceProvider { get; set; }
 
     /// <inheritdoc/>
     public ServiceDescriptor this[int index]
@@ -55,67 +56,6 @@ public class DtoServiceProvider : IServiceProvider, IServiceCollection
     /// </para>
     /// </summary>
     public bool IsReadOnly => throw new NotImplementedException();
-
-    /// <summary>
-    /// <para xml:lang="ru">
-    /// Даёт возможность совместить регистрацию итерфейсов с их регистрацией в DI
-    /// </para>
-    /// <para xml:lang="en">
-    /// Makes it possible to combine the registration of interfaces with their registration in DI
-    /// </para>
-    /// </summary>
-    /// <param name="services">
-    /// <para xml:lang="ru">
-    /// Коллекция сервисов, предоставляемая хостом для конфигурации DI
-    /// </para>
-    /// <para xml:lang="en">
-    /// Collection of services provided by host for DI configuration
-    /// </para>
-    /// </param>
-    /// <param name="configure">
-    /// <para xml:lang="ru">
-    /// <see cref="Action{IServiceCollection}"/> для непосредственного выполненя регистрации
-    /// </para>
-    /// <para xml:lang="en">
-    /// <see cref="Action{IServiceCollection}"/> to perform registration itself
-    /// </para>
-    /// </param>
-    /// <example>
-    /// <code>
-    /// IHostBuilder hostBuilder = Host.CreateDefaultBuilder()
-    ///.ConfigureServices(serviceCollection =>
-    ///{
-    ///    DtoKit.Install(serviceCollection, services =>
-    ///    {
-    ///        services.AddTransient&lt;IShipCall, ShipCall&gt;();
-    ///        services.AddTransient&lt;ILocation, Location&gt;();
-    ///        services.AddTransient&lt;IRoute, Route&gt;();
-    ///        services.AddTransient&lt;ILine, Line&gt;();
-    ///        services.AddTransient&lt;IVessel, Vessel&gt;();
-    ///        services.AddTransient&lt;IShipCallForListing, ShipCall&gt;();
-    ///        services.AddTransient&lt;IShipCallAdditionalInfo, ShipCall&gt;();
-    ///        services.AddTransient&lt;IArrivalShipCall, ShipCall&gt;();
-    ///        services.AddTransient&lt;IDepartureShipCall, ShipCall&gt;();
-    ///        services.AddTransient&lt;IRouteShort, Route&gt;();
-    ///        services.AddTransient&lt;IVesselShort, Vessel&gt;();
-    ///        services.AddTransient&lt;ITravelForListing, Travel&gt;();
-    ///    });
-    ///});
-    ///host = hostBuilder.Build();
-    /// </code>
-    /// </example>
-    public static void Install(IServiceCollection services, Action<IServiceCollection> configure)
-    {
-        DtoServiceProvider instance = new(null);
-        services.AddSingleton<DtoServiceProvider>(serviceProvider =>
-        {
-            instance._serviceProvider = serviceProvider;
-            return instance;
-        });
-        instance._services = services;
-        configure?.Invoke(instance);
-        instance._services = null;
-    }
 
     /// <summary>
     /// <para xml:lang="ru">

@@ -33,7 +33,7 @@ public class DtoSharedUnitTest
         IHostBuilder hostBuilder = Host.CreateDefaultBuilder()
             .ConfigureServices(serviceCollection =>
             {
-                DtoKit.Install(serviceCollection, services =>
+                serviceCollection.AddDtoKit(services =>
                 {
                     services.AddTransient<IShipCall, ShipCall>();
                     services.AddTransient<ILocation, Location>();

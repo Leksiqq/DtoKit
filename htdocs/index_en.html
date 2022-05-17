@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<title>DtoKit Tutorial</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body {
+  font-family: "Lato", sans-serif;
+}
+
+.sidenav {
+  height: 100%;
+  width: 200px;
+  position: fixed;
+  z-index: 1;
+  top: 0;
+  left: 0;
+  background-color: rgb(255, 255, 255);
+  overflow-x: hidden;
+  padding-top: 20px;
+  font-size: smaller;
+}
+
+.sidenav a {
+  padding: 6px 6px 6px 32px;
+  text-decoration: none;
+  display:block;
+}
+
+.main {
+  margin-left: 200px /* Same as the width of the sidenav */
+}
+
+@media screen and (max-height: 450px) {
+  .sidenav {padding-top: 15px;}
+  .sidenav a {font-size: 18px;}
+}
+
+.indent1 {
+    margin-left: 10px;
+}
+
+.indent2 {
+    margin-left: 20px;
+}
+
+tr td:first-child {
+  width: 0;
+  white-space: nowrap;
+}
+
+table.members {
+    border-collapse: collapse;
+}
+table.members td {
+    border: 1px solid black;
+    padding: 5px
+}
+table:not(.members) td {
+    border: initial;
+    padding: 5px
+}
+</style>
+</head>
+<body>
+
+<div class="sidenav">
+    <a href="index.html">На русском</a>
+  <a style="font-size: larger" href="#DtoKit">DtoKit</a>
+  <a href="#class_tree">Class tree</a>
+  <a href="#interface_tree">Interface Tree</a>
+  <a href="#narrowing_interfaces">Narrowing interfaces</a>
+  <a href="#DtoKit.Install"><code>AddDtoKit(...)</code></a>
+  <a href="#DtoBuilder">DtoBuilder</a>
+  <a class="indent1" href="#DtoBuilder.Build"><code>Build&lt;T&gt;()</code> and <code>BuildOfType(Type type)</code></a>
+  <a class="indent2" href="#ValueRequestEventArgs"><code>ValueRequestEventArgs</code></a>
+  <a class="indent1" href="#DtoBuilder.Build_helper"><code>Build&lt;T&gt;(object helper)</code> and <code>BuildOfType(Type type, object helper)</code></a >
+  <a href="#DtoJsonConverterFactory">DtoJsonConverterFactory</a>
+  <a class="indent1" href="#serialization">Serialization</a>
+  <a class="indent1" href="#deserialization">Deserialization</a>
+</div>
+
+<div class="main">
+    <a name="DtoKit"/>
+    <h1>DtoKit</h1>
+    
+    
+    <p>
+        The <code>DtoKit</code> library is designed to prevent the dependence of the model and presentation of the application, both server and client parts,
+        from the specific implementation of object classes of the subject area. At the same time, its use will avoid data transfer between application levels.
+        using Data Transfer Objects (DTO) or Plain Old CLR Object (POCO). The above applies to the construction of domain objects, their serialization in JSON and
+        deserialization from JSON for interaction between client and server.
+    </p>
+    <a name="class_tree"/>
+    <h2>Class tree</h2>
+
+    <pclass="definition">
+        <b>Class tree</b> from the subject area is a connected acyclic graph (actually, a tree) whose root is the class under consideration,
+        nodes - aggregated classes from the subject area, leaves - properties open for writing.
+    </p>
+    <p>
+        Let's consider an example from the subject area related to the timetable of ships.
+    </p>
+    <p>
+        For brevity, we give only the main properties of entities, although they may contain methods, but in this context it does not matter.
+    </p>
+    <table>
+        <tr class="line">
+            <td>
+                <script src="https://gist.github.com/Leksiqq/3b3ad64a407514821e8f145d84968fcf.js"></script>
+            </td>
+        </tr>
+        <tr class="port">
+            <td>
+                <script src="https://gist.github.com/Leksiqq/8c2635d11b6c711cd76b35c66434aa42.js"></script>
+            </td>
+        </tr>
+        <tr class="vessel">
+            <td>
+                <script src="https://gist.github.com/Leksiqq/2a07b1aff6ec2ed1a185247bc7fb5df6.js"></script>
+            </td>
+        </tr>
+        <tr class="route">
+            <td>
+                <script src="https://gist.github.com/Leksiqq/2d263b3a4c5b4e780c24129d8676d93c.js"></script>
+            </td>
+        </tr>
+        <tr class="ship call">
+            <td>
+                <script src="https://gist.github.com/Leksiqq/61f0a106ae55c43b396fae61ed427f4c.js"></script>
+            </td>
+        </tr>
+    </table>
+    <p>
+        For the <code>ShipCall</code> class, we have the following tree (node ​​names are omitted for clarity):
+    </p>
+    <img src="class_tree.jpg"/>
+
+<p>
+    As you can see, the class tree can be infinite.
+</p>
+
+
+    <a name="interface_tree"/>
+    <h2>Interface tree</h2>
+    <p>
+        Now we can develop <b>read-only</b> interfaces that cover all the properties in our domain classes and within the domain, that is, the database keys will not appear anywhere.
+        Let's force the classes to implement them explicitly, if necessary, this will not add any logic.
+        We will edit the classes, but this will not affect anything, since the new properties will only be "aliases" of the class properties.
+    </p>
+    <p>
+        AlsoLet's not immediately take into account that we will still need to implicitly use the key properties at the loading and transfer levels, at least for client requests to specific objects on the server
+        (we will see later that it is not only for this), so we will mark such properties with a special <code>[Key]</code> attribute.
+    </p>
+    <p>
+        Here's what happened:
+    </p>
+    <table>
+        <tr class="line">
+            <td align="top">
+                <script src="https://gist.github.com/Leksiqq/1db7848998bf9480f7a32e9e60b0b0fe.js"></script>
+            </td>
+            <td align="top">
+                <script src="https://gist.github.com/Leksiqq/d7cddf8a4c54d9ebdb850a6a9440b2de.js"></script>
+            </td>
+        </tr>
+        <tr class="port">
+            <td align="top">
+                <script src="https://gist.github.com/Leksiqq/a93cae0085b7fe1098c52f21bc2fa6fa.js"></script>
+            </td>
+            <td align="top">
+                <script src="https://gist.github.com/Leksiqq/3595db898dcab215f8cb1d0cf28e9443.js"></script>
+            </td>
+        </tr>
+        <tr class="vessel">
+            <td align="top">
+                <script src="https://gist.github.com/Leksiqq/fb00cfc0fb938bba2460a48728016f3f.js"></script>
+            </td>
+            <td align="top">
+                <script src="https://gist.github.com/Leksiqq/17341a04e2f6d1a917911327ce1b1ca4.js"></script>
+            </td>
+        </tr>
+        <tr class="route">
+            <td align="top">
+                <script src="https://gist.github.com/Leksiqq/d6e18578c8fcd54a8d85ef28d10d573a.js"></script>
+            </td>
+            <td align="top">
+                <script src="https://gist.github.com/Leksiqq/207e4cf33c0e0e4c3f60e2ba8d1705fb.js"></script>
+            </td>
+        </tr>
+        <tr class="ship call">
+            <td align="top">
+                <script src="https://gist.github.com/Leksiqq/c113ec5603f18df09de77961b70be14d.js"></script>
+            </td>
+            <td align="top">
+                <script src="https://gist.github.com/Leksiqq/6b5f64f73a1f6e5a6805e1fd40742da9.js"></script>
+            </td>
+        </tr>
+    </table>
+    <p>
+        Obviously, according to the modified definition for the class tree in an intuitively understandable way, an interface tree is built.
+    </p>
+    <p>
+        For example, the <code>IShipCall</code> interface tree looks like this (node ​​names omitted for readability):
+    </p>
+    <img src="interface_tree.jpg"/>
+
+    <p>
+        As you can see, the interface tree can also be infinite.
+    </p>
+    
+
+    <a name="narrowing_interfaces"/>
+    <h2>Narrowing interfaces</h2>
+    <p>
+        Suppose we want to display a list of ship calls to the client in the form of a table. We don’t need objects as a whole, but we also don’t want to make a separate class for
+        rows of the table, since its "physical" meaning would be unclear.
+    </p>
+    <p>
+        Suppose we need to display in the table the name of the line, the name of the ship, the name of the port of arrival / departure, the voyage number, the time of arrival / departure, additional information.
+        Then we make a new tree
+        interfaces that contains only this data:
+    </p>
+    <table>
+        <tr class="line">
+            <td align="top">
+                <script src="https://gist.github.com/Leksiqq/1db7848998bf9480f7a32e9e60b0b0fe.js"></script>
+            </td>
+            <td align="top">
+                <script src="https://gist.github.com/Leksiqq/d7cddf8a4c54d9ebdb850a6a9440b2de.js"></script>
+            </td>
+        </tr>
+        <tr class="port">
+            <td align="top">
+                <script src="https://gist.github.com/Leksiqq/a93cae0085b7fe1098c52f21bc2fa6fa.js"></script>
+            </td>
+            <td align="top">
+                <script src="https://gist.github.com/Leksiqq/3595db898dcab215f8cb1d0cf28e9443.js"></script>
+            </td>
+        </tr>
+        <tr class="vessel">
+            <td align="top">
+                <script src="https://gist.github.com/Leksiqq/9f17d20a489e823b8c3d3f8e9133eb39.js"></script>
+            </td>
+            <td align="top">
+                <script src="https://gist.github.com/Leksiqq/17341a04e2f6d1a917911327ce1b1ca4.js"></script>
+                <script src="https://gist.github.com/Leksiqq/3747db0c0015dcb4fad54495ae6a4b0a.js"></script>
+            </td>
+        </tr>
+        <tr class="route">
+            <td align="top">
+                <script src="https://gist.github.com/Leksiqq/6a433677b34cc723c5b59e7270058745.js"></script>
+            </td>
+            <td align="top">
+                <script src="https://gist.github.com/Leksiqq/207e4cf33c0e0e4c3f60e2ba8d1705fb.js"></script>
+                <script src="https://gist.github.com/Leksiqq/a874801805c0081a4edc66eae1e893fe.js"></script>
+            </td>
+        </tr>
+        <tr class="ship call">
+            <td align="top">
+                <script src="https://gist.github.com/Leksiqq/0cf2c4255fbcfb6aa69d7a6b2b30d59c.js"></script>
+            </td>
+            <td valuen="top">
+                <script src="https://gist.github.com/Leksiqq/6b5f64f73a1f6e5a6805e1fd40742da9.js"></script>
+                <script src="https://gist.github.com/Leksiqq/1026838b177dd32812524f5b781f67d6.js"></script>
+            </td>
+        </tr>
+    </table>
+    <p>
+        For example, the <code>IShipCallForList</code> interface tree looks like this (node ​​names omitted for readability):
+    </p>
+    <img src="interface_tree_1.jpg"/>
+
+    <p>
+        Also in the <code>ShipCall</code> class, we have the <code>AdditionalInfo</code> property, which takes a long time to load due to a separate request
+        to the DB. Therefore, we want to first display a table to the user, and then gradually update these cells.
+    </p>
+    <p>
+        Let's create another interface:
+    </p>
+    <table>
+        <tr class="ship call">
+            <td align="top">
+                <script src="https://gist.github.com/Leksiqq/6f1af1fc6f1d14d322b9a8264bfaf7bc.js"></script>
+            </td>
+            <td align="top">
+                <script src="https://gist.github.com/Leksiqq/6b5f64f73a1f6e5a6805e1fd40742da9.js"></script>
+                <script src="https://gist.github.com/Leksiqq/1026838b177dd32812524f5b781f67d6.js"></script>
+                <script src="https://gist.github.com/Leksiqq/f89449e2610874c1f5f816f2896c2a37.js"></script>
+            </td>
+        </tr>
+    </table>
+            
+    <p>
+        The <code>IShipCallAdditionInfo</code> interface tree looks like this (node ​​names omitted for readability):
+    </p>
+    <img src="interface_tree_2.jpg"/>
+
+    <a name="DtoKit.Install"/>
+
+    <h2><code>AddDtoKit(...)</code></h2>
+    <script src="https://gist.github.com/Leksiqq/7db0ab86fda085cb13120371dbd3d400.js"></script>
+    <p>
+    This method must be called during the configuration of the dependency injection mechanism.
+    </p>
+    <p>
+    Through the <code>IServiceCollection services</code> parameter, you need to pass the collection of services provided by the host,
+    and the <code>Action<IServiceCollection> configure</code> parameter must contain a method that registers all interfaces,
+        which are introduced for domain classes, in the collection of services provided by the <code>DtoKit</code> library,
+        which acts as a proxy for a collection of host services (the main thing is not to confuse).
+    </p>
+    <p>
+        In our case, it will look like this:
+    </p>
+    <script src="https://gist.github.com/Leksiqq/fec06e77dc53f81adc5307e0556c3d54.js"></script>
+
+    <p>
+        Note that in this context the lifetime can only be <code>ServiceLifetime.Transient</code>, others will throw an exception.
+    </p>
+    
+    <a name="DtoBuilder"/>
+
+    <h2>DtoBuilder</h2>
+    <p>
+      The <code>DtoBuilder</code> class is designed to load objects from storage, such as a database.
+      Features:
+    </p>
+    <ul>
+        <li>loads only key properties and properties that match the tree of the requested interface</li>
+        <li>does not duplicate already loaded objects with the same tree</li>
+    </ul>
+    <p>
+        The <code>DtoBuilder</code> instance needs to be obtained through the dependency injection mechanism, it is already registered there when calling <a href="#DtoKit.Install"><code>DtoKit.Install(...)</code></a>:
+    </p>
+    <script src="https://gist.github.com/Leksiqq/eeca244c3a7eb1454b43b150d88268a1.js"></script>
+
+    <p>
+        Then use one of two ways (T is the requested interface):
+    </p>
+    <ul>
+        <li>Subscribe to the <code>ValueRequest</code> event and call <a href="#DtoBuilder.Build"><code>Build&lt;T&gt;()</code></a></li>
+        <li>Call <a href="#DtoBuilder.Build_helper"><code>Build&lt;T&gt;(object helper)</code></a> where <code>helper</code> is a custom object</li >
+    </ul>
+    <p>
+        In both cases, the method will return the constructed object. If you want to load an already existing object, you need to assign it to the <code>Target</code> property.
+        Otherwise, the object will be obtained through dependency injection.
+    </p>
+
+    <a name="DtoBuilder.Build"/>
+    <h3><code>Build&lt;T&gt;()</code> and <code>BuildOfType(Type type)</code></h3>
+
+    <p>
+        When using this method, you need to subscribe to the <code>ValueRequest</code> event:
+    </p>
+    <script src="https://gist.github.com/Leksiqq/5a20a2944f5bb670380d892ef632d8b0.js"></script>
+     <p>
+         When calling the <code>Build&lt;T&gt;()</code> method, the tree of the requested interface is traversed in width and in each node and leaf
+         the event handler is called, passing an argument like <a href="#ValueRequestEventArgs"><code>ValueRequestEventArgs</code></a>.
+     </p>
+
+     <a name="ValueRequestEventArgs"/>
+     <h4><code>ValueRequestEventArgs</code></h4>
+     <p>
+         Members:
+     </p>
+        <table class="members">
+            <tr>
+                <td align="top">
+                     <code>public Type RootType { get; }</code>
+                </td>
+                <td align="top">
+                    requested interface type
+               </td>
+           </tr>
+           <tr>
+               <td align="top">
+                    <code>public string Path { get; }</code>
+               </td>
+               <td align="top">
+                    path from the <b>class</b> tree root - property names through /
+               </td>
+           </tr>
+           <tr>
+               <td align="top">
+                    <code>public bool IsNullable { get; }</code>
+               </td>
+               <td align="top">
+                    indicates that the property can be set to <code>null</code>. Based on availability? in the property type;
+                    <code>DtoBuilder</code> prevents assigning <code>null</code> if the value is <code>false</code>
+               </td>
+           </tr>
+           <tr>
+               <td align="top">
+                    <code>public bool IsLeaf { get; }</code>
+               </td>
+               <td align="top">
+                    indicates that the current node in the interface tree is a leaf. This means that its type was not registered when calling
+                    <a href="#DtoKit.Install"><code>DtoKit.Install(...)</code></a>
+               </td>
+           </tr>
+           <tr>
+               <td align="top">
+                    <code>public Type NominalType { get; }</code>
+               </td>
+               <td align="top">
+                    the property type of the current node in the interface tree
+               </td>
+           </tr>
+           <tr>
+               <td align="top">
+                    <code>public object? value { get; set; }</code>
+               </td>
+               <td align="top">
+                    returns the current value of the property and is used to assign a new value. In the case of a node, the object has already been provided
+               </td>
+           </tr>
+           <tr>
+               <td align="top">
+                    <code>public bool IsCommited { get; set; }</code>
+               </td>
+               <td align="top">
+                    when assigned a value of <code>true</code>, the nodes and leaves of the subtree rooted at that node are skipped.
+               </td>
+           </tr>
+       </table>
+   <p>
+       In the case of a node, no action can be taken because the object has already been assigned. In the case of a sheet, you must explicitly assign a value to the <code>Value</code> property,
+       otherwise an exception will be thrown.
+   </p>
+
+   <a name="DtoBuilder.Build_helper"/>
+   <h3><code>Build&lt;T&gt;(object helper)</code> and <code>BuildOfType(Type type, object helper)</code></h3>
+
+   <p>
+       <code>helper</code> - an object of an arbitrary class containing public methods marked with special attributes and having a special metric.
+   </p>
+   <script src="https://gist.github.com/Leksiqq/b616025960875d69f1f637e418ca6cea.js"></script>
+
+       <table class="members">
+           <tr>
+               <td align="top">
+                    <code>[Startup]</code>
+               </td>
+               <td align="top">
+                    an optional method that, if present, is called before the object is constructed
+               </td>
+           </tr>
+           <tr>
+               <td align="top">
+                   <code>[Shutdown]</code>
+               </td>
+               <td align="top">
+                   optional method, which, if present, is called after the construction of the object is completed
+               </td>
+           </tr>
+           <tr>
+               <td align="top">
+                   <code>[Before]</code>
+               </td>
+               <td align="top">
+                   an optional method that, if present, is called before requesting the value of each node or leaf
+               </td>
+           </tr>
+           <tr>
+               <td align="top">
+                   <code>[After]</code>
+               </td>
+               <td align="top">
+                   an optional method that, if present, is called after requesting the value of each node or leaf
+               </td>
+           </tr>
+           <tr>
+               <td align="top">
+                   <code>[Path("/...")]</code>
+               </td>
+               <td align="top">
+                    a method required for leaves and optional for nodes. If defined for a node, must return the value of the <code>value</code> argument if
+                    the supplied object remains, either <code>null</code> or a reference to another object, at the developer's discretion.
+                    If not defined for a sheet, an exception is thrown. One method can have multiple <code>[Path("/...")]</code> attributes. All paths must be different
+                    class limits
+               </td>
+           </tr>
+       </table>
+   <p>
+       Parameters for methods marked with <code>[Before]</code>, <code>[After]</code>, <code>[Path("/...")]</code>:
+    </p>
+        <table class="members">
+            <tr>
+                <td align="top">
+                     <code>stringpath</code>
+                </td>
+                <td align="top">
+                     path from the root of the class tree
+                </td>
+            </tr>
+            <tr>
+                <td align="top">
+                    <code>Type type</code>
+                </td>
+                <td align="top">
+                    the property type of the current node in the interface tree
+                </td>
+            </tr>
+            <tr>
+                <td align="top">
+                    <code>object? value</code>
+                </td>
+                <td align="top">
+                    the initial value of the property of the current node. For a sheet, the value is <code>default</code>. Keep in mind that if the leaf property has some value
+                    by default when creating an object, it cannot be counted on, as it is lost.
+                </td>
+            </tr>
+            <tr>
+                <td align="top">
+                    <code>bool isLeaf</code>
+                </td>
+                <td align="top">
+                    indicates that the current node in the interface tree is a leaf. This means that its type was not registered when calling
+                     <a href="#DtoKit.Install"><code>DtoKit.Install(...)</code></a>
+                </td>
+            </tr>
+            <tr>
+                <td align="top">
+                    <code>bool isNullable</code>
+                </td>
+                <td align="top">
+                    indicates that the property can be set to <code>null</code>. Based on availability? in the property type;
+                     <code>DtoBuilder</code> prevents assigning <code>null</code> if the value is <code>false</code>
+                </td>
+            </tr>
+            <tr>
+                <td align="top">
+                    <code>ref bool isCommitted</code>
+                </td>
+                <td align="top">
+                    when assigned a value of <code>true</code>, the nodes and leaves of the subtree rooted at that node are skipped.
+                </td>
+            </tr>
+        </table>
+        <p>
+            <b>Important!</b> The use of infinite interface trees is limited! If a node of the same type is encountered on the path from the node to the root, then this is an error,
+            except when these nodes are ends of the same edge. In this case, there is no error, but only the key properties are loaded.
+        </p>
+        <p>
+            For example, you can write a program that prints all paths:
+        </p>
+        <script src="https://gist.github.com/Leksiqq/cf71e40a782e22d4369702e62195ac92.js"></script>
+        <pre><code>/
+/ID_LINE
+/ID_SHIPCALL
+/AdditionalInfo
+/arrival
+/departure
+/voyage
+/Port
+/Port/ID_PORT
+/Port/Name
+/PrevCall
+/PrevCall/ID_LINE
+/PrevCall/ID_SHIPCALL
+/Route
+/Route/ID_LINE
+/Route/ID_ROUTE
+/Route/Line
+/Route/Line/ID_LINE
+/Route/Line/Name
+/Route/Vessel
+/Route/Vessel/ID_VESSEL
+/Route/Vessel/Brutto
+/Route/Vessel/CallSign
+/Route/Vessel/Height
+/Route/Vessel/Length
+/Route/Vessel/Name
+/Route/Vessel/Netto
+/Route/Vessel/Width
+/Route/Vessel/Port
+/Route/Vessel/Port/ID_PORT
+/Route/Vessel/Port/Name</code></pre>
+
+<p>
+    We see that for <code>PrevCall</code> only keys are requested.
+</p>
+    <a name="DtoJsonConverterFactory"/>
+    <h2>DtoJsonConverterFactory</h2>
+    <p>
+       The class <code>DtoJsonConverterFactory</code> is a custom Json converter factory for working with interfaces registered via
+       <a href="#DtoKit.Install"><code>DtoKit.Install(...)</code></a>, as well as their collections using standard tools from the <code>System.Text.Json namespace. *</code>.
+       Features:
+       
+    </p>
+    <ul>
+        <li>
+            during serialization, writes to the resulting Json only key properties and properties corresponding to the tree of the requested interface
+        </li>
+        <li>
+            serialization mode is enabled by default, in which already serialized objects are written to Json only by key properties
+        </li>
+        <li>
+            has a serialization mode in which all objects are already written to Json with only key properties. This is useful for server requests.
+        </li>
+        <li>
+            does not duplicate objects when deserializing
+        </li>
+        <li>
+            Values ​​of enumerated types (<code>enum</code>) automatically serialize/deserialize by name
+        </li>
+        <li>
+            Depending on the settings, it can overwrite, supplement and update the target collection of objects when deserializing the Json array
+        </li>
+    </ul>
+    <p>
+        The <code>DtoJsonConverterFactory</code> instance needs to be obtained through the dependency injection mechanism, it is already registered there when <a href="#DtoKit.Install"><code>DtoKit.Install(...)</code></a>,
+        create ecinstance of <code>System.Text.Json.JsonSerializerOptions</code>, add a factory to its converters, and then use the normal mechanism by substituting the <code>JsonSerializerOptions</code> argument:
+    </p>
+    <script src="https://gist.github.com/Leksiqq/03bd0f04851fd20a980a98075673ef06.js"></script>
+
+    <a name="serialization"/>
+    <h3>Serialization</h3>
+
+    <p>
+        Properties used only during serialization:
+        </p>
+
+        <table class="members">
+            <tr>
+                <td align="top">
+                     <code>public KeysProcessing KeysProcessing { get; set; }</code>
+                </td>
+                <td align="top">
+                     Specifies how to deal with key properties:
+                     <ul>
+                         <table>
+                             <tr>
+                                <td valign="top"><li><code>KeysProcessing.OnlyKeysForRepeats</code></li></td>
+                                <td align="top">
+                                    for re-serializable objects within the current Json
+                                    only key properties and special field <code>{..., "$keyOnly": true}</code> are output (default)
+                                </td>
+                            </tr>
+                            <tr>
+                                <td valign="top"><li><code>KeysProcessing.Usual</code></li></td>
+                                <td align="top">
+                                    serialization in the usual way: all writable properties of the <b>class</b> are output in Json
+                                </td>
+                            </tr>
+                            <tr>
+                                <td valign="top"><li><code>KeysProcessing.OnlyKeys</code></li></td>
+                                <td align="top">
+                                    only key properties and special field <code>{..., "$keyOnly": true}</code> are output
+                                </td>
+                            </tr>
+                         </table>
+                         
+                     </ul>
+                     The value of this field can no longer be changed after the first serialization has started.
+                </td>
+            </tr>
+            <tr>
+                <td align="top">
+                    <code>public bool WithMagic</code>
+                </td>
+                <td align="top">
+                    when assigning the value <code>true</code>, a special field <code>{"$magic": "applied", ...}</code> is added to each Json object.
+                    This is convenient for visual verification that all the necessary objects are serialized using <code>DtoJsonConverterFactory</code>
+                </td>
+            </tr>
+        </table>
+
+    <a name="deserialization"/>
+    <h3>Deserialization</h3>
+    <p>
+        Properties used only during deserialization:
+        </p>
+        <table class="members">
+            <tr>
+                <td align="top">
+                     <code>public bool UseEndOfDataNull { get; set; }</code>
+                </td>
+                <td align="top">
+                     when deserializing a top-level Json array, points to possibly partial content. The last element of the next array,
+                     equal to <code>null</code> means the end of the collection and sets <code>IsEndOfData = true</code>.
+                     The fact that the collection will be transferred in parts is reported to the client separately, for example, through the http header
+                </td>
+            </tr>
+            <tr>
+                <td align="top">
+                    <code>public bool IsEndOfData { get; }</code>
+                </td>
+                <td align="top">
+                    the value <code>true</code> means that <code>UseEndOfDataNull == true</code> and <code>null</code> came, i.e. passing the collection in parts
+                    completed. The fact that the collection will be transferred in parts is reported to the client separately, for example, through the http header
+                </td>
+            </tr>
+            <tr>
+                <td align="top">
+                    <code>public object? target {get; set; }</code>
+                </td>
+                <td align="top">
+                    when assigning an object to this property, Json is deserialized into it, instead of creating a new object. It is not recommended to read this property,
+                    since during the deserialization process it changes unpredictably from the point of view of the observer
+                </td>
+            </tr>
+        </table>
+        <p>
+            Also, when deserializing a top-level Json array, special dummy types can be used to control the population of the target collection of objects.
+            In this case, the target collection must exist and must be assigned to the <code>Target</code> property before deserialization.
+            The dummy type is specified inas a type parameter when calling <code>JsonSerializer.Deserialize&lt;...&gt;(...)</code>. The return value of such a call
+            should be ignored as this is just a stub and actually populates the collection previously assigned to the <code>Target</code> property. Meaning of use
+            the technique is to run on the client with an <code>ObservableCollection</code> associated with the user interface.
+        </p>
+        <table class="members">
+            <tr>
+                <td align="top">
+                     <code>RewritableListStub&lt;T&gt;</code>
+                </td>
+                <td align="top">
+                    populates the target collection from the beginning, reusing objects already contained in it, removing unnecessary ones or adding missing ones at the end
+                    <script src="https://gist.github.com/Leksiqq/04bc9a3e3edd14ca56c3c0fbbb19d16b.js"></script>
+                </td>
+            </tr>
+            <tr>
+                <td align="top">
+                    <code>AppendableListStub&lt;T&gt;</code>
+                </td>
+                <td align="top">
+                    adds objects to the end of the target collection. Convenient for filling parts.
+                </td>
+            </tr>
+            <tr>
+                <td align="top">
+                    <code>UpdateableListStub&lt;T&gt;</code>
+                </td>
+                <td align="top">
+                    Updates the objects in the target collection by finding them by key properties.
+                    <br/>
+                    For example, in the example with ship call additional information, we first load ship calls with empty additional information, and then load only
+                    additional information, entering it in the required lines. Since additional information on the legend is calculated slowly, the user does not wait, but receives
+                    table quickly, and then sees additional information.
+                    <script src="https://gist.github.com/Leksiqq/a23481b0e4c3b960c3dbe4332be16a6d.js"></script>
+                </td>
+            </tr>
+        </table>
+  </div>
+   
+</body>
+</html>

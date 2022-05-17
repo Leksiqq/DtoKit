@@ -14,7 +14,7 @@ namespace Net.Leksi.Dto;
 /// get JSON converter builder and factory via DI
 /// </para>
 /// </summary>
-public static class DtoKit
+public static class DtoKitExtensions
 {
     /// <summary>
     /// <para xml:lang="ru">
@@ -43,32 +43,30 @@ public static class DtoKit
     /// <example>
     /// <code>
     /// IHostBuilder hostBuilder = Host.CreateDefaultBuilder()
-    ///.ConfigureServices(serviceCollection =>
-    ///{
-    ///    DtoKit.Install(serviceCollection, services =>
-    ///    {
-    ///        services.AddTransient&lt;IShipCall, ShipCall&gt;();
-    ///        services.AddTransient&lt;ILocation, Location&gt;();
-    ///        services.AddTransient&lt;IRoute, Route&gt;();
-    ///        services.AddTransient&lt;ILine, Line&gt;();
-    ///        services.AddTransient&lt;IVessel, Vessel&gt;();
-    ///        services.AddTransient&lt;IShipCallForListing, ShipCall&gt;();
-    ///        services.AddTransient&lt;IShipCallAdditionalInfo, ShipCall&gt;();
-    ///        services.AddTransient&lt;IArrivalShipCall, ShipCall&gt;();
-    ///        services.AddTransient&lt;IDepartureShipCall, ShipCall&gt;();
-    ///        services.AddTransient&lt;IRouteShort, Route&gt;();
-    ///        services.AddTransient&lt;IVesselShort, Vessel&gt;();
-    ///        services.AddTransient&lt;ITravelForListing, Travel&gt;();
-    ///    });
+    ///.AddDtoKit(services =>
+    /// {
+    ///     services.AddTransient&lt;IShipCall, ShipCall&gt;();
+    ///     services.AddTransient&lt;ILocation, Location&gt;();
+    ///     services.AddTransient&lt;IRoute, Route&gt;();
+    ///     services.AddTransient&lt;ILine, Line&gt;();
+    ///     services.AddTransient&lt;IVessel, Vessel&gt;();
+    ///     services.AddTransient&lt;IShipCallForListing, ShipCall&gt;();
+    ///     services.AddTransient&lt;IShipCallAdditionalInfo, ShipCall&gt;();
+    ///     services.AddTransient&lt;IArrivalShipCall, ShipCall&gt;();
+    ///     services.AddTransient&lt;IDepartureShipCall, ShipCall&gt;();
+    ///     services.AddTransient&lt;IRouteShort, Route&gt;();
+    ///     services.AddTransient&lt;IVesselShort, Vessel&gt;();
+    ///     services.AddTransient&lt;ITravelForListing, Travel&gt;();
     ///});
     ///host = hostBuilder.Build();
     /// </code>
     /// </example>
-    public static void Install(IServiceCollection services, Action<IServiceCollection> configure)
+    public static IServiceCollection AddDtoKit(this IServiceCollection services, Action<IServiceCollection> configure)
     {
-        DtoServiceProvider.Install(services, configure);
+        services.AddDtoCore(configure);
         services.AddSingleton(opt => new TypesForest(opt.GetRequiredService<DtoServiceProvider>()));
         services.AddTransient(opt => new DtoBuilder(opt.GetRequiredService<TypesForest>()));
         services.AddTransient(opt => new DtoJsonConverterFactory(opt.GetRequiredService<TypesForest>()));
+        return services;
     }
 }
