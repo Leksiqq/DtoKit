@@ -71,7 +71,7 @@ table:not(.members) td {
   <a href="#class_tree">Class tree</a>
   <a href="#interface_tree">Interface Tree</a>
   <a href="#narrowing_interfaces">Narrowing interfaces</a>
-  <a href="#DtoKit.Install"><code>AddDtoKit(...)</code></a>
+  <a href="#AddDtoKit"><code>AddDtoKit(...)</code></a>
   <a href="#DtoBuilder">DtoBuilder</a>
   <a class="indent1" href="#DtoBuilder.Build"><code>Build&lt;T&gt;()</code> and <code>BuildOfType(Type type)</code></a>
   <a class="indent2" href="#ValueRequestEventArgs"><code>ValueRequestEventArgs</code></a>
@@ -297,7 +297,7 @@ table:not(.members) td {
     </p>
     <img src="interface_tree_2.jpg"/>
 
-    <a name="DtoKit.Install"/>
+    <a name="AddDtoKit"/>
 
     <h2><code>AddDtoKit(...)</code></h2>
     <script src="https://gist.github.com/Leksiqq/7db0ab86fda085cb13120371dbd3d400.js"></script>
@@ -331,7 +331,7 @@ table:not(.members) td {
         <li>does not duplicate already loaded objects with the same tree</li>
     </ul>
     <p>
-        The <code>DtoBuilder</code> instance needs to be obtained through the dependency injection mechanism, it is already registered there when calling <a href="#DtoKit.Install"><code>DtoKit.Install(...)</code></a>:
+        The <code>DtoBuilder</code> instance needs to be obtained through the dependency injection mechanism, it is already registered there when calling <a href="#AddDtoKit"><code>AddDtoKit(...)</code></a>:
     </p>
     <script src="https://gist.github.com/Leksiqq/eeca244c3a7eb1454b43b150d88268a1.js"></script>
 
@@ -396,7 +396,7 @@ table:not(.members) td {
                </td>
                <td align="top">
                     indicates that the current node in the interface tree is a leaf. This means that its type was not registered when calling
-                    <a href="#DtoKit.Install"><code>DtoKit.Install(...)</code></a>
+                    <a href="#AddDtoKit"><code>AddDtoKit(...)</code></a>
                </td>
            </tr>
            <tr>
@@ -517,7 +517,7 @@ table:not(.members) td {
                 </td>
                 <td align="top">
                     indicates that the current node in the interface tree is a leaf. This means that its type was not registered when calling
-                     <a href="#DtoKit.Install"><code>DtoKit.Install(...)</code></a>
+                     <a href="#AddDtoKit"><code>AddDtoKit(...)</code></a>
                 </td>
             </tr>
             <tr>
@@ -585,7 +585,7 @@ table:not(.members) td {
     <h2>DtoJsonConverterFactory</h2>
     <p>
        The class <code>DtoJsonConverterFactory</code> is a custom Json converter factory for working with interfaces registered via
-       <a href="#DtoKit.Install"><code>DtoKit.Install(...)</code></a>, as well as their collections using standard tools from the <code>System.Text.Json namespace. *</code>.
+       <a href="#AddDtoKit"><code>AddDtoKit(...)</code></a>, as well as their collections using standard tools from the <code>System.Text.Json namespace. *</code>.
        Features:
        
     </p>
@@ -610,7 +610,7 @@ table:not(.members) td {
         </li>
     </ul>
     <p>
-        The <code>DtoJsonConverterFactory</code> instance needs to be obtained through the dependency injection mechanism, it is already registered there when <a href="#DtoKit.Install"><code>DtoKit.Install(...)</code></a>,
+        The <code>DtoJsonConverterFactory</code> instance needs to be obtained through the dependency injection mechanism, it is already registered there when <a href="#AddDtoKit"><code>AddDtoKit(...)</code></a>,
         create ecinstance of <code>System.Text.Json.JsonSerializerOptions</code>, add a factory to its converters, and then use the normal mechanism by substituting the <code>JsonSerializerOptions</code> argument:
     </p>
     <script src="https://gist.github.com/Leksiqq/03bd0f04851fd20a980a98075673ef06.js"></script>

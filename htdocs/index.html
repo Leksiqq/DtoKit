@@ -71,7 +71,7 @@ table:not(.members) td {
   <a href="#class_tree">Дерево класса</a>
   <a href="#interface_tree">Дерево интерфейса</a>
   <a href="#narrowing_interfaces">Сужающие интерфейсы</a>
-  <a href="#DtoKit.Install"><code>AddDtoKit(...)</code></a>
+  <a href="#AddDtoKit"><code>AddDtoKit(...)</code></a>
   <a href="#DtoBuilder">DtoBuilder</a>
   <a class="indent1" href="#DtoBuilder.Build"><code>Build&lt;T&gt;()</code> и <code>BuildOfType(Type type)</code></a>
   <a class="indent2" href="#ValueRequestEventArgs"><code>ValueRequestEventArgs</code></a>
@@ -297,7 +297,7 @@ table:not(.members) td {
     </p>
     <img src="interface_tree_2.jpg"/>
 
-    <a name="DtoKit.Install"/>
+    <a name="AddDtoKit"/>
 
     <h2><code>AddDtoKit(...)</code></h2>
     <script src="https://gist.github.com/Leksiqq/7db0ab86fda085cb13120371dbd3d400.js"></script>
@@ -331,7 +331,7 @@ table:not(.members) td {
         <li>не дублирует уже загруженные объекты с тем же деревом</li>
     </ul>
     <p>
-        Экземпляр <code>DtoBuilder</code> нужно получить через механизм внедрения зависимости, он уже зарегистрирован там при вызове <a href="#DtoKit.Install"><code>DtoKit.Install(...)</code></a>:
+        Экземпляр <code>DtoBuilder</code> нужно получить через механизм внедрения зависимости, он уже зарегистрирован там при вызове <a href="#AddDtoKit"><code>AddDtoKit(...)</code></a>:
     </p>
     <script src="https://gist.github.com/Leksiqq/eeca244c3a7eb1454b43b150d88268a1.js"></script>
 
@@ -396,7 +396,7 @@ table:not(.members) td {
                 </td>
                 <td valign="top">
                      указывает, что текущий узел в дереве интерфейса является листом. Это означает, что его тип не был зарегистрирован при вызове 
-                     <a href="#DtoKit.Install"><code>DtoKit.Install(...)</code></a>
+                     <a href="#AddDtoKit"><code>AddDtoKit(...)</code></a>
                 </td>
             </tr>
             <tr>
@@ -517,7 +517,7 @@ table:not(.members) td {
                 </td>
                 <td valign="top">
                     указывает, что текущий узел в дереве интерфейса является листом. Это означает, что его тип не был зарегистрирован при вызове 
-                     <a href="#DtoKit.Install"><code>DtoKit.Install(...)</code></a>
+                     <a href="#AddDtoKit"><code>AddDtoKit(...)</code></a>
                 </td>
             </tr>
             <tr>
@@ -585,7 +585,7 @@ table:not(.members) td {
     <h2>DtoJsonConverterFactory</h2>
     <p>
        Класс <code>DtoJsonConverterFactory</code> является фабрикой кастомных Json конвертеров для работы с интерфейсами, зарегистрированными через 
-       <a href="#DtoKit.Install"><code>DtoKit.Install(...)</code></a>, а также с их коллекциями стандартными средствами из пространства имён <code>System.Text.Json.*</code>.
+       <a href="#AddDtoKit"><code>AddDtoKit(...)</code></a>, а также с их коллекциями стандартными средствами из пространства имён <code>System.Text.Json.*</code>.
        Имеет особенности: 
        
     </p>
@@ -610,7 +610,7 @@ table:not(.members) td {
         </li>
     </ul>
     <p>
-        Экземпляр <code>DtoJsonConverterFactory</code> нужно получить через механизм внедрения зависимости, он уже зарегистрирован там при вызове <a href="#DtoKit.Install"><code>DtoKit.Install(...)</code></a>,
+        Экземпляр <code>DtoJsonConverterFactory</code> нужно получить через механизм внедрения зависимости, он уже зарегистрирован там при вызове <a href="#AddDtoKit"><code>AddDtoKit(...)</code></a>,
         создать экземпляр <code>System.Text.Json.JsonSerializerOptions</code>, добавить фабрику в его конвертеры, а затем использовать обычный механизм, подставляя аргумент <code>JsonSerializerOptions</code>:
     </p>
     <script src="https://gist.github.com/Leksiqq/03bd0f04851fd20a980a98075673ef06.js"></script>
