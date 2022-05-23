@@ -28,6 +28,15 @@ public class ObjectCache
     /// </summary>
     public int Count => _objectsCache.Count;
 
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Конструктор
+    /// </para>
+    /// <para xml:lang="en">
+    /// Constructor
+    /// </para>
+    /// </summary>
+    /// <param name="typesForest"></param>
     public ObjectCache(TypesForest typesForest) 
     {
         _typesForest = typesForest;

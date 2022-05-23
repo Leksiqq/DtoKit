@@ -7,7 +7,7 @@
 		<AssemblyName>Net.Leksi.DtoKit</AssemblyName>
 		<RootNamespace>Net.Leksi.Dto</RootNamespace>
 		<Copyright>2022-04-06</Copyright>
-		<VersionPrefix>1.0.0</VersionPrefix>
+		<VersionPrefix>1.0.1</VersionPrefix>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<Description>
@@ -23,6 +23,7 @@
 		<PackageProjectUrl>https://dtokit.sourceforge.io/</PackageProjectUrl>
 		<PackageTags>JSON;ASP.NET;Data Transfer Object</PackageTags>
 		<OutputType>Library</OutputType>
+		<PackageReadmeFile>readme.md</PackageReadmeFile>
 	</PropertyGroup>
 
 	<Target Name="CopyPackage" AfterTargets="Pack">
@@ -30,9 +31,16 @@
 	</Target>
 
 	<ItemGroup>
+	  <None Include="..\readme.md">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
+	</ItemGroup>
+
+  <ItemGroup>
 	  <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
-	  <PackageReference Include="Net.Leksi.DtoBuilder" Version="1.0.0" />
-	  <PackageReference Include="Net.Leksi.DtoJsonConverter" Version="1.0.0" />
+	  <PackageReference Include="Net.Leksi.DtoBuilder" Version="1.0.3" />
+	  <PackageReference Include="Net.Leksi.DtoJsonConverter" Version="1.0.1" />
 	</ItemGroup>
 
 </Project>

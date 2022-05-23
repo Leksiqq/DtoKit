@@ -2,6 +2,16 @@
 
 namespace Net.Leksi.Dto;
 
+/// <summary>
+/// <para xml:lang="ru">
+/// Класс, предоставляющий расширение для <see cref="IServiceCollection"/> предназначенное для 
+/// включения инфраструктуры поддержки Dto
+/// </para>
+/// <para xml:lang="en">
+/// A class that provides an extension to <see cref="IServiceCollection"/> for
+/// enabling Dto support infrastructure
+/// </para>
+/// </summary>
 public static class DtoCoreExtensions
 {
     /// <summary>

@@ -7,7 +7,7 @@
 		<AssemblyName>Net.Leksi.DtoBuilder</AssemblyName>
 		<RootNamespace>Net.Leksi.Dto</RootNamespace>
 		<Copyright>2022-03-29</Copyright>
-		<VersionPrefix>1.0.0</VersionPrefix>
+		<VersionPrefix>1.0.3</VersionPrefix>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<Description>
@@ -21,13 +21,22 @@
 		<RepositoryUrl>https://sourceforge.net/p/dtokit/code</RepositoryUrl>
 		<PackageProjectUrl>https://dtokit.sourceforge.io/</PackageProjectUrl>
 		<PackageTags>JSON;ASP.NET;Data Transfer Object</PackageTags>
+		<PackageReadmeFile>readme.md</PackageReadmeFile>
 	</PropertyGroup>
 
 	<Target Name="CopyPackage" AfterTargets="Pack">
 		<Move SourceFiles="$(OutputPath)..\$(PackageId).$(PackageVersion).nupkg" DestinationFolder="F:\leksi\C#\nuget.local" />
 	</Target>
 
-	<ItemGroup>
-	  <PackageReference Include="Net.Leksi.DtoCore" Version="1.0.0" />
+  <ItemGroup>
+    <None Update="readme.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+
+  <ItemGroup>
+	  <PackageReference Include="Net.Leksi.DtoCore" Version="1.0.1" />
 	</ItemGroup>
 </Project>

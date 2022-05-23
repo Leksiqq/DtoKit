@@ -174,7 +174,7 @@ internal class ListDeserializer<T> : JsonConverter<ListStub<T>> where T : class
         for (int i = _objectCache!.Count; i < result.Count; i++)
         {
             object[] itemKey = _typeNode!.GetKey(result[i]!)!;
-            _objectCache.Add(result[i].GetType(), itemKey, result[i]!);
+            _objectCache.Add(result[i]!.GetType(), itemKey, result[i]!);
         }
         if (_objectCache.TryGet(updateableProbe.GetType(), key, out object? item))
         {

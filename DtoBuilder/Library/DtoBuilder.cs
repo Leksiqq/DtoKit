@@ -113,7 +113,7 @@ public class DtoBuilder
     /// </exception>
     public T? Build<T>(object helper) where T : class
     {
-        return (T)BuildOfType(typeof(T), helper);
+        return (T?)BuildOfType(typeof(T), helper);
     }
 
     /// <summary>
@@ -211,7 +211,7 @@ public class DtoBuilder
     /// </returns>
     public T? Build<T>() where T : class
     {
-        return (T)BuildOfType(typeof(T));
+        return (T?)BuildOfType(typeof(T));
     }
 
     /// <summary>

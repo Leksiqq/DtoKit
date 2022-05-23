@@ -1,7 +1,20 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<!-- Yandex.Metrika counter -->
+<script type="text/javascript" >
+    (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+    m[i].l=1*new Date();k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+    (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
+ 
+    ym(88869399, "init", {
+         clickmap:true,
+         trackLinks:true,
+         accurateTrackBounce:true
+    });
+ </script>
+ <noscript><div><img src="https://mc.yandex.ru/watch/88869399" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+ <!-- /Yandex.Metrika counter --><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 <title>DtoKit Tutorial</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
@@ -307,8 +320,7 @@ table:not(.members) td {
     <p>
     Through the <code>IServiceCollection services</code> parameter, you need to pass the collection of services provided by the host,
     and the <code>Action<IServiceCollection> configure</code> parameter must contain a method that registers all interfaces,
-        which are introduced for domain classes, in the collection of services provided by the <code>DtoKit</code> library,
-        which acts as a proxy for a collection of host services (the main thing is not to confuse).
+        which are introduced for domain classes, in the collection of services provided by the <code>DtoKit</code> library.
     </p>
     <p>
         In our case, it will look like this:

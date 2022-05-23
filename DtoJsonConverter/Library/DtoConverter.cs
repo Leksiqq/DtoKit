@@ -303,7 +303,7 @@ internal class DtoConverter<T> : JsonConverter<T> where T : class
                 foreach (PropertyNode propertyNode in typeNode.ChildNodes)
                 {
                     writer.WritePropertyName(propertyNode.Name!);
-                    JsonSerializer.Serialize(writer, propertyNode.PropertyInfo.GetValue(value), propertyNode.TypeNode.Type, options);
+                    JsonSerializer.Serialize(writer, propertyNode.PropertyInfo!.GetValue(value), propertyNode.TypeNode.Type, options);
                     propertyPosition++;
                     if (propertyPosition > 0 && propertyPosition == typeNode.KeysCount)
                     {

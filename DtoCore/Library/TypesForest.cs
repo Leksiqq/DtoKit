@@ -176,7 +176,7 @@ public class TypesForest
         }
     }
 
-    private TypeNode GetTypeNode(Type type, Stack<Type> stack)
+    private TypeNode GetTypeNode(Type type, Stack<Type>? stack)
     {
         if (!_typeTrees.ContainsKey(type))
         {
