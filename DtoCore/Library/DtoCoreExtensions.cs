@@ -72,5 +72,34 @@ public static class DtoCoreExtensions
         instance._services = null;
         return services;
     }
-
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="services"></param>
+    /// <param name="type"></param>
+    /// <param name="keyDefinition"></param>
+    /// <returns></returns>
+    public static IServiceCollection AddKeyMapping(this IServiceCollection services, Type type, Dictionary<string, Type> keyDefinition)
+    {
+        if (services is DtoServiceProvider instance)
+        {
+            instance.AddKeyMapping(type, keyDefinition);
+        }
+        return services;
+    }
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="services"></param>
+    /// <param name="type"></param>
+    /// <param name="keyDefinition"></param>
+    /// <returns></returns>
+    public static IServiceCollection AddKeyMapping(this IServiceCollection services, Type type, Type example)
+    {
+        if (services is DtoServiceProvider instance)
+        {
+            instance.AddKeyMapping(type, example);
+        }
+        return services;
+    }
 }
