@@ -7,7 +7,7 @@
 		<AssemblyName>Net.Leksi.DtoCore</AssemblyName>
 		<RootNamespace>Net.Leksi.Dto</RootNamespace>
 		<Copyright>2022-03-29</Copyright>
-		<VersionPrefix>1.0.1</VersionPrefix>
+		<VersionPrefix>1.1.0</VersionPrefix>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<Description>

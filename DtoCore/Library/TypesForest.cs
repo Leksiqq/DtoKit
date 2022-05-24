@@ -267,7 +267,7 @@ public class TypesForest
                     {
                         if (req.PropertyNode.IsKey && !req.PropertyNode.IsLeaf)
                         {
-                            actualKeysCount += req.PropertyNode.TypeNode.ChildNodes.Count;
+                            actualKeysCount += req.PropertyNode.TypeNode.ChildNodes!.Count;
                         }
                         int pathLength1 = path.Length;
                         path.Append(req.Path);

@@ -86,7 +86,7 @@ public class TypeNode
             object value = v.PropertyInfo!.GetValue(item)!;
             if (v.IsKey)
             {
-                return v.TypeNode.ChildNodes.Select(cn => cn.PropertyInfo.GetValue(value)!);
+                return v.TypeNode.ChildNodes!.Select(cn => cn.PropertyInfo!.GetValue(value)!);
             }
             return new[] { value };
         }).ToArray();
