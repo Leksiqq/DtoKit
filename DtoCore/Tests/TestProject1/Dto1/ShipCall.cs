@@ -1,15 +1,12 @@
 ﻿using Net.Leksi.Dto;
 using System;
 
-namespace TestProject1.Dto1;
+namespace DtoTestProject.Dto1;
 
 public class ShipCall : IShipCall, IShipCallForListing, IDepartureShipCall, IArrivalShipCall
 {
     [Key]
-    public string ID_LINE { get; set; }
-
-    [Key]
-    public int ID_ROUTE { get; set; }
+    public IShipCallKey ID { get; set; }
 
     public Route RouteImpl { get; set; }
 

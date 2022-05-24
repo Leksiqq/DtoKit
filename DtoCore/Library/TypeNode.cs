@@ -81,7 +81,15 @@ public class TypeNode
     /// </returns>
     public object[]? GetKey(object item)
     {
-        return ChildNodes?.Take(KeysCount).Select(v => v.PropertyInfo!.GetValue(item)!).ToArray();
+        return ChildNodes?.Take(KeysCount).SelectMany(v => 
+        {
+            object value = v.PropertyInfo!.GetValue(item)!;
+            if (v.IsKey)
+            {
+                return v.TypeNode.ChildNodes.Select(cn => cn.PropertyInfo.GetValue(value)!);
+            }
+            return new[] { value };
+        }).ToArray();
     }
 
 }

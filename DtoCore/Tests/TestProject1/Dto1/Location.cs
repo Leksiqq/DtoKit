@@ -1,6 +1,6 @@
 ﻿using Net.Leksi.Dto;
 
-namespace TestProject1.Dto1;
+namespace DtoTestProject.Dto1;
 
 public class Location : ILocation
 {

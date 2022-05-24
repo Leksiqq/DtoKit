@@ -60,5 +60,9 @@ namespace Net.Leksi.Dto
         /// </para>
         /// </summary>
         public bool IsLeaf => TypeNode.ChildNodes is null;
+        /// <summary>
+        /// 
+        /// </summary>
+        public bool IsKey { get; internal set; } = false;
     }
 }

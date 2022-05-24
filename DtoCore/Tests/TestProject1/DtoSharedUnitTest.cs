@@ -4,9 +4,9 @@ using Net.Leksi.Dto;
 using NUnit.Framework;
 using System.Collections.Generic;
 using System.Diagnostics;
-using TestProject1.Dto1;
+using DtoTestProject.Dto1;
 
-namespace TestProject1;
+namespace DtoTestProject;
 
 public class DtoSharedUnitTest
 {

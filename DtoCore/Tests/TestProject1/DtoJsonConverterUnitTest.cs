@@ -8,9 +8,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
-using TestProject1.Dto1;
+using DtoTestProject.Dto1;
 
-namespace TestProject1;
+namespace DtoTestProject;
 
 public class DtoJsonConverterUnitTest
 {

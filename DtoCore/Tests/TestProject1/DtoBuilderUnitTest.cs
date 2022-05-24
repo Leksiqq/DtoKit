@@ -7,9 +7,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
-using TestProject1.Dto1;
+using DtoTestProject.Dto1;
 
-namespace TestProject1;
+namespace DtoTestProject;
 
 public class DtoBuilderUnitTest
 {
@@ -25,9 +25,11 @@ public class DtoBuilderUnitTest
                 serviceCollection.AddDtoKit(services =>
                 {
                     services.AddTransient<IShipCall, ShipCall>();
+                    services.AddTransient<IShipCallKey, ShipCallKey>();
                     services.AddTransient<ILocation, Location>();
                     services.AddTransient<IRoute, Route>();
                     services.AddTransient<ILine, Line>();
+                    services.AddTransient<ILineKey, LineKey>();
                     services.AddTransient<IVessel, Vessel>();
                     services.AddTransient<IShipCallForListing, ShipCall>();
                     services.AddTransient<IShipCallAdditionalInfo, ShipCall>();
@@ -51,6 +53,17 @@ public class DtoBuilderUnitTest
     public void Setup()
     {
         host.RunAsync();
+    }
+
+    [Test]
+    public void TestComplexKey() 
+    {
+        TypesForest tf = host.Services.GetRequiredService<TypesForest>();
+
+        TypeNode typeNode = tf.GetTypeNode(typeof(ILine));
+        object[]? objects = typeNode.GetKey(new Line { ID = new LineKey { ID_LINE = "NTL" }, Name = "NTL" });
+        //Console.WriteLine(string.Join("\n", tf.GetTypeNode(typeof(ILine)).ValueRequests));
+        Console.WriteLine(string.Join("\n", objects));
     }
 
     [Test]
@@ -93,11 +106,11 @@ public class DtoBuilderUnitTest
         {
             switch (args.Path)
             {
-                case "/ID_LINE":
+                case "/ID/ID_LINE":
                     args.Value = "TRE";
                     args.IsCommited = true;
                     break;
-                case "/ID_ROUTE":
+                case "/ID/ID_ROUTE":
                     args.Value = i;
                     args.IsCommited = true;
                     break;
@@ -105,15 +118,15 @@ public class DtoBuilderUnitTest
                     args.Value = "TRE";
                     args.IsCommited = true;
                     break;
-                case "/RouteImpl":
-                    break;
                 case "/RouteImpl/ID_RHEAD":
                     args.Value = 1;
                     args.IsCommited = true;
                     break;
-                case "/RouteImpl/Line":
+                case "/RouteImpl/Line/ID/ID_LINE":
+                    args.Value = "TRE";
+                    args.IsCommited = true;
                     break;
-                case "/RouteImpl/Line/ID_LINE":
+                case "/RouteImpl/Line/ShortName":
                     args.Value = "TRE";
                     args.IsCommited = true;
                     break;
@@ -201,11 +214,12 @@ public class DtoBuilderUnitTest
         object Apache(string path, Type type, object value, ref bool isCommited)
         {
             //isCommited = true;
-            return new Line {ID_LINE = "NTL", Name = "NTL" };
+            return new Line { ID = new LineKey { ID_LINE = "NTL" }, Name = "NTL" };
         }
 
-        [Path("/ID_LINE")]
+        [Path("/ID/ID_LINE")]
         [Path("/Name")]
+        [Path("/ShortName")]
         object Netscape(string path, Type type, object value, ref bool isCommited)
         {
             return "TRE";
@@ -233,7 +247,7 @@ public class DtoBuilderUnitTest
 
         ILine line = dtoBuilder.Build<ILine>(new Helper1());
 
-        Trace.WriteLine(line.ShortName);
+        //Trace.WriteLine(line.Name);
 
         Trace.WriteLine(JsonSerializer.Serialize(line, options));
 

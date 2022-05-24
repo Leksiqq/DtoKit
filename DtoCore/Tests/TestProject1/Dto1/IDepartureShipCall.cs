@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace TestProject1.Dto1;
+namespace DtoTestProject.Dto1;
 
 public interface IDepartureShipCall: IShipCallAdditionalInfo
 {

@@ -292,7 +292,7 @@ public class DtoBuilder
                     typeNodes.Push(request.PropertyNode.TypeNode);
                     eventArgs.Init(request.PropertyNode, target, request.Path);
                     ValueRequest?.Invoke(eventArgs);
-                    if (eventArgs.IsReset)
+                    if (eventArgs.IsReset || eventArgs.IsCommited)
                     {
                         targets.Pop();
                         if (targets.Count > 0)
@@ -304,10 +304,10 @@ public class DtoBuilder
                             result = eventArgs.Value;
                         }
                         targets.Push(eventArgs.Value);
-                        _probeObjects.TryAdd(request.PropertyNode.TypeNode.Type, target);
-                    }
-                    if (eventArgs.IsReset || eventArgs.IsCommited)
-                    {
+                        if (eventArgs.IsReset)
+                        {
+                            _probeObjects.TryAdd(request.PropertyNode.TypeNode.Type, target);
+                        }
                         skipTo = targets.Count - 1;
                     }
                 }
@@ -495,6 +495,7 @@ public class HelperSkeleton
         throw new NotImplementedException();
     }}
 ");
+            args.IsCommited = args.IsLeaf;
         }
         ValueRequest += eh;
         Build<T>();

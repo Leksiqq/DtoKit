@@ -230,6 +230,7 @@ public class TypesForest
 
     private void CollectValueRequests(TypeNode typeNode, List<ValueRequest> requests, Stack<Type> stack)
     {
+        int actualKeysCount = typeNode.KeysCount;
         StringBuilder path = new();
         if(path.Length == 0)
         {
@@ -264,6 +265,10 @@ public class TypesForest
                 {
                     if(req.Path != Slash)
                     {
+                        if (req.PropertyNode.IsKey && !req.PropertyNode.IsLeaf)
+                        {
+                            actualKeysCount += req.PropertyNode.TypeNode.ChildNodes.Count;
+                        }
                         int pathLength1 = path.Length;
                         path.Append(req.Path);
                         request = new ValueRequest
@@ -275,9 +280,9 @@ public class TypesForest
                         range.Add(request);
                         path.Length = pathLength1;
                         position++;
-                        if(ReferenceEquals(requests, propertyNode.TypeNode.ValueRequests) && position == typeNode.KeysCount)
+                        if (ReferenceEquals(requests, propertyNode.TypeNode.ValueRequests) && position == actualKeysCount)
                         {
-                            break;
+                                break;
                         }
 
                     }
@@ -294,10 +299,12 @@ public class TypesForest
     {
         foreach (PropertyInfo propertyInfo in actualProperties)
         {
+            bool isKey = false;
             PropertyInfo? actualProperty = null;
             if (propertyInfo.GetCustomAttribute<KeyAttribute>() is KeyAttribute)
             {
                 actualProperty = propertyInfo;
+                isKey = true;
             }
             else if (propertyInfo.Name.Contains(Dot))
             {
@@ -334,16 +341,17 @@ public class TypesForest
                 bool foundTypeNode = _typeTrees.ContainsKey(propertyInfo.PropertyType);
                 var newPropertyNode = new PropertyNode
                 {
-                    Name = propertyInfo.Name.Contains(Dot) 
-                        ? propertyInfo.Name.Substring(propertyInfo.Name.LastIndexOf(Dot) + 1) 
+                    Name = propertyInfo.Name.Contains(Dot)
+                        ? propertyInfo.Name.Substring(propertyInfo.Name.LastIndexOf(Dot) + 1)
                         : propertyInfo.Name,
                     PropertyInfo = actualProperty,
-                    TypeNode = ServiceProvider.IsRegistered(propertyInfo.PropertyType) 
-                        ? GetTypeNode(propertyInfo.PropertyType, stack) 
+                    TypeNode = ServiceProvider.IsRegistered(propertyInfo.PropertyType)
+                        ? GetTypeNode(propertyInfo.PropertyType, stack)
                         : new TypeNode { Type = propertyInfo.PropertyType, ActualType = propertyInfo.PropertyType },
                     IsNullable = (propertyInfo.PropertyType.IsValueType && Nullable.GetUnderlyingType(propertyInfo.PropertyType) is Type)
                         || propertyInfo.GetCustomAttributes().Any(a => a.GetType().Name.Contains(_nullableAttributeName))
                 };
+                newPropertyNode.IsKey = isKey && !newPropertyNode.IsLeaf;
                 typeNode.ChildNodes!.Add(newPropertyNode);
             }
         }
@@ -358,6 +366,7 @@ public class TypesForest
         {
             foreach (PropertyInfo propertyInfo in currentType.GetProperties(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance))
             {
+                
                 if (propertyInfo.GetCustomAttribute<KeyAttribute>() is KeyAttribute)
                 {
                     if (!propertyInfo.CanWrite)
