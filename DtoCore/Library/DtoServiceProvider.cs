@@ -293,15 +293,4 @@ public class DtoServiceProvider : IServiceProvider, IServiceCollection
         }
         return null;
     }
-
-    internal void AddKeyMapping(Type type, Dictionary<string, Type> keyDefinition)
-    {
-
-    }
-
-    internal void AddKeyMapping(Type type, Type example)
-    {
-
-    }
-
 }
