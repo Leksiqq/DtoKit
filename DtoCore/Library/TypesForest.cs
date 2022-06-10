@@ -17,7 +17,8 @@ public class TypesForest
     
     private const string Slash = "/";
     private const string Dot = ".";
-    private const string _nullableAttributeName = "NullableAttribute";
+
+    private readonly NullabilityInfoContext _nullabilityInfoContext = new();
 
     private static readonly PropertyNodeComparer _propertyNodeComparer = new();
 
@@ -349,7 +350,7 @@ public class TypesForest
                         ? GetTypeNode(propertyInfo.PropertyType, stack)
                         : new TypeNode { Type = propertyInfo.PropertyType, ActualType = propertyInfo.PropertyType },
                     IsNullable = (propertyInfo.PropertyType.IsValueType && Nullable.GetUnderlyingType(propertyInfo.PropertyType) is Type)
-                        || propertyInfo.GetCustomAttributes().Any(a => a.GetType().Name.Contains(_nullableAttributeName))
+                        || _nullabilityInfoContext.Create(propertyInfo).WriteState is NullabilityState.Nullable
                 };
                 newPropertyNode.IsKey = isKey && !newPropertyNode.IsLeaf;
                 typeNode.ChildNodes!.Add(newPropertyNode);

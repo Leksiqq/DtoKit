@@ -7,7 +7,7 @@
 		<AssemblyName>Net.Leksi.DtoJsonConverter</AssemblyName>
 		<RootNamespace>Net.Leksi.Dto</RootNamespace>
 		<Copyright>2022-03-29</Copyright>
-		<VersionPrefix>1.1.0</VersionPrefix>
+		<VersionPrefix>1.1.1</VersionPrefix>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<Description>
@@ -36,7 +36,7 @@
   </ItemGroup>
 
   <ItemGroup>
-	  <PackageReference Include="Net.Leksi.DtoCore" Version="1.1.0" />
+	  <PackageReference Include="Net.Leksi.DtoCore" Version="1.1.1" />
 	</ItemGroup>
 
 </Project>
